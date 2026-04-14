@@ -1,25 +1,28 @@
 #include "PuzzleBoard.h"
-
 #include <iostream>
 #include <vector>
+#include <string>
 #include <random>
 using namespace std;
 
 //构造函数初始化 m*n
-PuzzleBoard::PuzzleBoard(int m, int n, bool sd, bool md):row(m), col(n){
-    isSD = sd;
+PuzzleBoard::PuzzleBoard(int m, int n, bool md, bool sd):initialMinStep(0){
+    row = m;
+    col = n;
     isMD = md;
+    isSD = sd;
+    
     opCount = row + col;
     if (isSD) opCount++;
     if (isMD) opCount++;
     board.assign(row, vector<bool>(col, true));
 }
 
-int PuzzleBoard::getRow(){return row;}
-int PuzzleBoard::getCol(){return col;}
-vector<vector<bool>> PuzzleBoard::getBoard(){return board;}
+int PuzzleBoard::getRow() const {return row;}
+int PuzzleBoard::getCol() const {return col;}
+vector<vector<bool>> PuzzleBoard::getBoard() const {return board;}
 
-bool PuzzleBoard::isFinished(){
+bool PuzzleBoard::isFinished() const {
     for (int i=0; i<row; i++){
         for (int j=0; j<col; j++){
             if (board[i][j] == 0) return false;
@@ -28,13 +31,16 @@ bool PuzzleBoard::isFinished(){
     return true;
 }
 
-void PuzzleBoard::printBoard(){
-    for (int i=0; i<row; i++){
+void PuzzleBoard::fixedRowCol(int startRow, int startCol){
+    for (int i=startRow-1; i<row; i++){
         for (int j=0; j<col; j++){
-            cout << board[i][j];
-            if (j<col-1) cout << " ";
+            board[i][j] = 1;
         }
-        cout << '\n';
+    }
+    for (int j=startCol-1; j<col; j++){
+        for (int i=0; i<row; i++){
+            board[i][j] = 1;
+        }
     }
 }
 
@@ -51,14 +57,14 @@ void PuzzleBoard::turnCol(int colOrd){//翻转某列
     }
     playerStep++;
 }
-void PuzzleBoard::turnSD(){//翻转副对角线
-    for (int i=row-1,j=0; i>=0&&j<col; i--,j++){
+void PuzzleBoard::turnMD(){//翻转主对角线
+    for (int i=0,j=0; i<row&&j<col; i++,j++){
         board[i][j] = !board[i][j];
     }
     playerStep++;   
 }
-void PuzzleBoard::turnMD(){//翻转主对角线
-    for (int i=0,j=0; i<row&&j<col; i++,j++){
+void PuzzleBoard::turnSD(){//翻转副对角线
+    for (int i=row-1,j=0; i>=0&&j<col; i--,j++){
         board[i][j] = !board[i][j];
     }
     playerStep++;   
@@ -69,7 +75,7 @@ void PuzzleBoard::randomBoard(){
     //随机数：随机设备+梅森旋转引擎+均匀分布(DeepSeek V3)
     random_device rd;
     mt19937 gen(rd());
-    uniform_int_distribution<> dis(1, opCount);
+    uniform_int_distribution<> dis(1, opCount+18);
 
     for (int i=0; i<30; i++){
         int n = dis(gen);
@@ -78,34 +84,51 @@ void PuzzleBoard::randomBoard(){
             turnRow(n-1);
         if (n>row && n<=row+col)
             turnCol(n-row-1);
-        if (n==row+col+1)
-            turnSD();
-        if (n==row+col+2)
-            turnMD();
+        if (n>row+col && n<=row+col+8)
+            if (isMD) turnMD();
+        if (n>row+col+8)
+            if (isSD) turnSD();
     }
     playerStep = 0;
+    initialMinStep = getMinStep();
 }
 
 int PuzzleBoard::getMinStep(){
     bestSolve();
     return minStep;
 }
-int PuzzleBoard::getPlayerStep(){
+int PuzzleBoard::getPlayerStep() const {
     return playerStep;
 }
+int PuzzleBoard::getInitialMinStep() const {
+    return initialMinStep;
+}
 
-void PuzzleBoard::printBestSolve(){
+std::string PuzzleBoard::getBestSolveString(){
     bestSolve();
-    cout << "答案：";
-        for (int i=0; i<opCount; i++){
-            if (bestSol[i] == 1){
-                if (i>=0 && i<row) cout << "翻转第" << i+1 << "行 ";
-                if (i>=row && i<row+col) cout << "翻转第" << i-row+1 << "列 ";
-                if (isSD && i==row+col) cout << "翻转副对角线 ";
-                if (isMD && i==row+col+1) cout << "翻转主对角线 ";
-            }
+    if (minStep == 0) return "您已完成游戏，请点击[再来一局]";
+    std::string answer = "答案：\n";
+    // 处理行操作
+    for (int i=row-1; i>=0; i--){
+        if (bestSol[i] == 1){
+            answer += "翻转第" + std::to_string(row-i) + "行\n";
         }
-    cout << '\n';
+    }
+    // 处理列操作
+    for (int i=row; i <row+col; i++){
+        if (bestSol[i] == 1){
+            answer += "翻转第" + std::to_string(i-row+1) + "列\n";
+        }
+    }
+    // 处理对角线操作
+    if (isMD && bestSol[row+col] == 1){
+        answer += "点击左下角\n";
+    }
+    if (isSD && bestSol[row+col+1] == 1){
+        answer += "点击左上角\n";
+    }
+    
+    return answer;
 }
 
 //最优解
@@ -126,18 +149,18 @@ void PuzzleBoard::bestSolve(){
             mat[j][i+row] = 1;
         }
     }
-    if (isSD){//左下至右上
-        int sdRow = (row-1)*col;
-        for (int i=0; i<min(row,col); i++){
-            mat[sdRow][row+col] = 1;
-            sdRow -= (col-1);
-        }
-    }
     if (isMD){//左上至右下
         int mdRow = 0;
         for (int i=0; i<min(row,col); i++){
-            mat[mdRow][row+col+1] = 1;
+            mat[mdRow][row+col] = 1;
             mdRow += (col+1);
+        }
+    }
+    if (isSD){//左下至右上
+        int sdRow = (row-1)*col;
+        for (int i=0; i<min(row,col); i++){
+            mat[sdRow][row+col+1] = 1;
+            sdRow -= (col-1);
         }
     }
     for (int i=0; i<mRow; i++){//常数
@@ -220,19 +243,24 @@ void PuzzleBoard::bestSolve(){
             sol[Free[i]] = (mask >> i) & 1;//提取mask的第i位
             if (sol[Free[i]]==1) step++;
         }
+        if (step >= minStep) continue;//剪枝
 
         for (int i=0; i<mCol-1; i++){//遍历所有有变量的列
             if (!Col[i]) continue;//跳过自由变量
-            int sum = mat[Row[i]][mCol-1];//主元所在行的常数项
 
+            int sum = 0;
             for (int j=0; j<mCol-1; j++){
                 if (j!=i && mat[Row[i]][j]==1){//若主元所在行有其他的1，异或
                     sum ^= sol[j];
                 }
             }
+            sum ^= mat[Row[i]][mCol-1];//主元所在行的常数项
             sol[i] = sum;
+
             if (sum) step++;
+            if (step >= minStep) break;//剪枝
         }
+        if (step >= minStep) continue;//剪枝
 
         if (step < minStep) {//若步数更短，替换
             minStep = step;

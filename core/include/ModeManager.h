@@ -1,8 +1,5 @@
 #pragma once
-#include <PuzzleBoard.h>
-
-#include <vector>
-#include <string>
+#include "PuzzleBoard.h"
 
 class ModeManager{
 public:
@@ -16,12 +13,26 @@ public:
         static const int hardcore = 3;
     };
     
+    struct BoardConfig {
+        int rows;
+        int cols;
+        bool isMD;
+        bool isSD;
+    };
+    
     void setMode(int mode);
     void setRandomDiff(int diff);
-    int getRandomDiff();
-
+    int getRandomDiff() const;
+    
+    BoardConfig getBoardConfig() const;
     PuzzleBoard createBoard();
+    
+    void updateStreak();
+    void resetStreak();
+    int getCurrentStreak() const;
+    int getMaxStreak() const;
     
 private:
     int currentMode, currentDiff;
+    int currentStreak, maxStreak;//连赢局数
 };

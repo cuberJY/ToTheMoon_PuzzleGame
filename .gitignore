@@ -1,0 +1,33 @@
+# Build directories
+build/
+cmake-build-*/
+out/
+dist/
+
+# Qt Creator
+.qtcreator/
+
+# Generated files
+*.pro.user
+*.user
+*.cmake
+CMakeCache.txt
+CMakeFiles/
+Makefile
+cmake_install.cmake
+compile_commands.json
+
+# IDE
+.idea/
+*.swp
+*.swo
+*~
+
+# Logs
+*.log
+
+# Temporary files
+*.tmp
+*.temp
+*.bak
+*.orig

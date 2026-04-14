@@ -1,17 +1,14 @@
-#include <PuzzleBoard.h>
-#include <ModeManager.h>
+#include "PuzzleBoard.h"
+#include "ModeManager.h"
 
 #include <iostream>
-#include <vector>
-#include <random>
-#include <algorithm>
 #include <windows.h>
 using namespace std;
 
-int main(){
+int main2(){
     // 设置控制台输出为 UTF-8
     SetConsoleOutputCP(CP_UTF8);
-    // 可选：同时设置输入编码为 UTF-8（如果需要读中文）
+    // 同时设置输入编码为 UTF-8（如果需要读中文）
     SetConsoleCP(CP_UTF8);
 
     while (true){
@@ -19,21 +16,20 @@ int main(){
         manager.setMode(0);
         //选择难度
         int diff;
-        cout << "请选择难度：0-简单 1-普通 2-困难 3-硬核（必须以最少步数完成）" << endl;
+        cout << "请选择难度：0-简单 1-普通 2-困难 3-硬核" << endl;
         cin >> diff;
         manager.setRandomDiff(diff);
 
         PuzzleBoard board = manager.createBoard();
         
-        board.printBoard();
-        int minStep = board.getMinStep();
+        int minStep = board.getInitialMinStep();
         cout << "最佳步数：" << minStep << endl;
 
         //输入操作
         char input;
 
         while (!board.isFinished()){
-            cout << "qwerty翻转1-6行，asdfgh翻转1-6列，zx翻转副对角线和主对角线，n获得答案" << endl;
+            cout << "qwerty翻转1-6行，asdfgh翻转1-6列，zx翻转主对角线和副对角线，n获得答案" << endl;
             cin >> input;
             //操作
             switch (input){
@@ -51,14 +47,13 @@ int main(){
                 case 'g': board.turnCol(4); break;
                 case 'h': board.turnCol(5); break;
 
-                case 'z': board.turnSD(); break;
-                case 'x': board.turnMD(); break;
+                case 'z': board.turnMD(); break;
+                case 'x': board.turnSD(); break;
 
-                case 'n': board.printBestSolve(); break;
+                case 'n': cout << board.getBestSolveString() << endl; break;
                 default: cout << "无效输入，请重新输入" << endl; continue;
             }
 
-            board.printBoard();
             cout << "最佳步数：" << minStep << "，当前步数：" << board.getPlayerStep() << endl;
 
             if (manager.getRandomDiff() == 3 && board.getMinStep() > (minStep - board.getPlayerStep())){

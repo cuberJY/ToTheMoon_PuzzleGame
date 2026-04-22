@@ -5,47 +5,79 @@ project(ToTheMoonPuzzleGame VERSION 1.0.0 LANGUAGES CXX)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-find_package(Qt6 REQUIRED COMPONENTS Core Gui Widgets)
+find_package(Qt6 REQUIRED COMPONENTS Core Gui Widgets Multimedia)
 
-qt_standard_project_setup()
+# 启用 AUTOMOC、AUTOUIC 和 AUTORCC
+set(CMAKE_AUTOMOC ON)
+set(CMAKE_AUTOUIC ON)
+set(CMAKE_AUTORCC ON)
 
-qt_add_executable(ToTheMoonPuzzleGame
-    core/src/main.cpp
-    gui/src/main_gui.cpp
+# 手动指定源文件
+set(CORE_SOURCES
     core/src/ModeManager.cpp
+    core/src/PlayerData.cpp
     core/src/PuzzleBoard.cpp
+)
+
+set(GUI_SOURCES
+    gui/src/BoardController.cpp
+    gui/src/BoardView.cpp
+    gui/src/ChooseDiff.cpp
     gui/src/MainWindow.cpp
-    gui/src/board.cpp
-    gui/src/choosediff.cpp
-    gui/include/MainWindow.h
-    gui/include/board.h
-    gui/include/choosediff.h
+    gui/src/Tool.cpp
+    gui/src/main_gui.cpp
+)
+
+# 收集头文件
+set(CORE_HEADERS
     core/include/ModeManager.h
+    core/include/PlayerData.h
     core/include/PuzzleBoard.h
 )
 
-qt_wrap_ui(UI_SOURCES
-    ${CMAKE_CURRENT_SOURCE_DIR}/gui/src/board.ui
-    ${CMAKE_CURRENT_SOURCE_DIR}/gui/src/choosediff.ui
+set(GUI_HEADERS
+    gui/include/BoardController.h
+    gui/include/BoardView.h
+    gui/include/ChooseDiff.h
+    gui/include/MainWindow.h
+    gui/include/Tool.h
 )
 
-target_sources(ToTheMoonPuzzleGame PRIVATE
-    ${UI_SOURCES}
+# 收集UI文件
+set(UI_FILES
+    gui/src/BoardView.ui
+    gui/src/ChooseDiff.ui
 )
 
-set(UI_FILES_FOR_QTCREATOR
-    gui/src/board.ui
-    gui/src/choosediff.ui
+# 收集资源文件
+set(RESOURCE_FILES
+    resources/resources.qrc
 )
 
-target_sources(ToTheMoonPuzzleGame PRIVATE
-    ${UI_FILES_FOR_QTCREATOR}
+# 创建可执行文件
+qt_add_executable(ToTheMoonPuzzleGame
+    ${CORE_SOURCES}
+    ${GUI_SOURCES}
+    ${CORE_HEADERS}
+    ${GUI_HEADERS}
+    ${UI_FILES}
+    ${RESOURCE_FILES}
 )
 
-qt_add_resources(ToTheMoonPuzzleGame resources)
+if(WIN32)
+    set_target_properties(ToTheMoonPuzzleGame PROPERTIES
+        WIN32_EXECUTABLE TRUE
+    )
+endif()
+
+# 添加编译选项
+if(MSVC)
+    target_compile_options(ToTheMoonPuzzleGame PRIVATE /W4)
+else()
+    target_compile_options(ToTheMoonPuzzleGame PRIVATE -Wall -Wextra -Wpedantic)
+endif()
 
 target_include_directories(ToTheMoonPuzzleGame PRIVATE
-    ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/core/include
     ${CMAKE_CURRENT_SOURCE_DIR}/gui/include
     ${CMAKE_CURRENT_BINARY_DIR}
@@ -55,19 +87,5 @@ target_link_libraries(ToTheMoonPuzzleGame PRIVATE
     Qt::Core
     Qt::Gui
     Qt::Widgets
-)
-
-set_target_properties(ToTheMoonPuzzleGame PROPERTIES
-    MACOSX_BUNDLE_GUI_IDENTIFIER com.github.ToTheMoonPuzzleGame
-    MACOSX_BUNDLE_BUNDLE_VERSION ${PROJECT_VERSION}
-    MACOSX_BUNDLE_SHORT_VERSION_STRING ${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}
-    MACOSX_BUNDLE TRUE
-    WIN32_EXECUTABLE TRUE
-)
-
-include(GNUInstallDirs)
-
-install(TARGETS ToTheMoonPuzzleGame
-    BUNDLE DESTINATION .
-    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+    Qt::Multimedia
 )

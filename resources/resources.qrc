@@ -1,0 +1,32 @@
+<RCC>
+    <qresource prefix="/">
+        <!-- Background images -->
+        <file>images/background/backgroundBoard.png</file>
+        <file>images/background/backgroundRandom.png</file>
+        
+        <!-- Board images -->
+        <file>images/board/cellOn.png</file>
+        <file>images/board/cellOff.png</file>
+        
+        <!-- Button images -->
+        <file>images/buttons/rowBtn0.png</file>
+        <file>images/buttons/rowBtn1.png</file>
+        <file>images/buttons/rowBtn2.png</file>
+        <file>images/buttons/rowBtn3.png</file>
+        <file>images/buttons/rowBtn4.png</file>
+        <file>images/buttons/rowBtn5.png</file>
+        <file>images/buttons/colBtn0.png</file>
+        <file>images/buttons/colBtn1.png</file>
+        <file>images/buttons/colBtn2.png</file>
+        <file>images/buttons/colBtn3.png</file>
+        <file>images/buttons/colBtn4.png</file>
+        <file>images/buttons/colBtn5.png</file>
+        <file>images/buttons/mdBtn.png</file>
+        <file>images/buttons/sdBtn.png</file>
+
+        <!-- BackgroundMusic audio -->
+        <file>audio/bgm/For River Piano(Johnny's Version).mp3</file>
+        <file>audio/effect/finish.mp3</file>
+        <file>audio/effect/turn.mp3</file>
+    </qresource>
+</RCC>

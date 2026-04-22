@@ -3,14 +3,14 @@
 
 class ModeManager{
 public:
-    struct mode{
-        static const int random = 0;
+    enum class mode{
+        random,
     };
-    struct diff{
-        static const int symple = 0;
-        static const int normal = 1;
-        static const int hard = 2;
-        static const int hardcore = 3;
+    enum class diff{
+        easy,
+        normal,
+        hard,
+        hardcore,
     };
     
     struct BoardConfig {
@@ -20,19 +20,14 @@ public:
         bool isSD;
     };
     
-    void setMode(int mode);
-    void setRandomDiff(int diff);
-    int getRandomDiff() const;
+    void setMode(mode chooseMode);
+    void setRandomDiff(diff chooseDiff);
+    diff getRandomDiff() const;
     
     BoardConfig getBoardConfig() const;
     PuzzleBoard createBoard();
     
-    void updateStreak();
-    void resetStreak();
-    int getCurrentStreak() const;
-    int getMaxStreak() const;
-    
 private:
-    int currentMode, currentDiff;
-    int currentStreak, maxStreak;//连赢局数
+    mode currentMode;
+    diff currentDiff;
 };

@@ -1,41 +1,39 @@
-#include "ModeManager.h"
+﻿#include "ModeManager.h"
 #include "PuzzleBoard.h"
 
-void ModeManager::setMode(int mode){
-    currentMode = mode;
+void ModeManager::setMode(mode chooseMode){
+    currentMode = chooseMode;
 }
-void ModeManager::setRandomDiff(int diff){
-    currentDiff = diff;
-    currentStreak = 0;
-    maxStreak = 0;
+void ModeManager::setRandomDiff(diff chooseDiff){
+    currentDiff = chooseDiff;
 }
-int ModeManager::getRandomDiff() const{
+ModeManager::diff ModeManager::getRandomDiff() const{
     return currentDiff;
 }
 
-ModeManager::BoardConfig ModeManager::getBoardConfig() const {
+ModeManager::BoardConfig ModeManager::getBoardConfig() const{
     BoardConfig config;
 
     switch(currentDiff){
-        case 0:
+        case diff::easy:
             config.rows = 4;
             config.cols = 4;
             config.isMD = true;
             config.isSD = false;
             break;
-        case 1:
+        case diff::normal:
             config.rows = 5;
             config.cols = 4;
             config.isMD = true;
             config.isSD = false;
             break;
-        case 2:
+        case diff::hard:
             config.rows = 6;
             config.cols = 5;
             config.isMD = true;
             config.isSD = true;
             break;
-        case 3:
+        case diff::hardcore:
             config.rows = 6;
             config.cols = 6;
             config.isMD = true;
@@ -48,14 +46,13 @@ ModeManager::BoardConfig ModeManager::getBoardConfig() const {
             config.isSD = true;
             break;
     }
-
     return config;
 }
 
 PuzzleBoard ModeManager::createBoard(){
     switch(currentMode){
-        case 0:{
-            ModeManager::BoardConfig config = getBoardConfig();
+        case mode::random:{
+            BoardConfig config = getBoardConfig();
             PuzzleBoard board(config.rows, config.cols, config.isMD, config.isSD);
             board.randomBoard();
             return board;
@@ -63,23 +60,4 @@ PuzzleBoard ModeManager::createBoard(){
         default:
             return PuzzleBoard(1,1,0,0);
     }
-}
-
-void ModeManager::updateStreak(){
-    currentStreak++;
-    if (currentStreak > maxStreak){
-        maxStreak = currentStreak;
-    }
-}
-
-void ModeManager::resetStreak(){
-    currentStreak = 0;
-}
-
-int ModeManager::getCurrentStreak() const{
-    return currentStreak;
-}
-
-int ModeManager::getMaxStreak() const{
-    return maxStreak;
 }

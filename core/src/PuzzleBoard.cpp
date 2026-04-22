@@ -31,19 +31,6 @@ bool PuzzleBoard::isFinished() const {
     return true;
 }
 
-void PuzzleBoard::fixedRowCol(int startRow, int startCol){
-    for (int i=startRow-1; i<row; i++){
-        for (int j=0; j<col; j++){
-            board[i][j] = 1;
-        }
-    }
-    for (int j=startCol-1; j<col; j++){
-        for (int i=0; i<row; i++){
-            board[i][j] = 1;
-        }
-    }
-}
-
 //玩家操作 (m+n+2)种
 void PuzzleBoard::turnRow(int rowOrd){//翻转某行
     for (int i=0; i<col; i++){
@@ -89,8 +76,10 @@ void PuzzleBoard::randomBoard(){
         if (n>row+col+8)
             if (isSD) turnSD();
     }
+    
     playerStep = 0;
     initialMinStep = getMinStep();
+    if (initialMinStep < 3) randomBoard();
 }
 
 int PuzzleBoard::getMinStep(){

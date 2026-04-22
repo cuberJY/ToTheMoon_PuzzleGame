@@ -12,8 +12,6 @@ public:
     std::vector<std::vector<bool>> getBoard() const;
     bool isFinished() const;
 
-    void fixedRowCol(int startRow, int startCol);
-
     //玩家操作 (m+n+2)种
     void turnRow(int rowOrd);
     void turnCol(int colOrd);

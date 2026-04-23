@@ -22,7 +22,7 @@ public:
     static QString getImgPath(const QString& relativePath);
     //设置图片
     static void setButtonImage(QPushButton* btn, const QString& imgPath);
-    static void setPuzzleBoardImage(QPushButton* btn, const QString& imgPath, int row, int col, int width, int height);
+    static void setPuzzleBoardImage(QPushButton* btn, const QPixmap& pixmap);
     static void setBackground(QWidget* widget, const QString& imgPath);
 
     //获取音频路径
@@ -44,8 +44,8 @@ public:
     static void clickedAnimation(QPushButton* btn, bool isAnimation, const QString& onStyle);
     
 private:
-    static QMediaPlayer* bgmPlayer;
-    static QMediaPlayer* effectPlayer;
-    static QAudioOutput* bgmAudioOutput;
-    static QAudioOutput* effectAudioOutput;
+    static std::unique_ptr<QMediaPlayer> bgmPlayer;
+    static std::unique_ptr<QMediaPlayer> effectPlayer;
+    static std::unique_ptr<QAudioOutput> bgmAudioOutput;
+    static std::unique_ptr<QAudioOutput> effectAudioOutput;
 };

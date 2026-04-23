@@ -22,6 +22,12 @@ BoardView::BoardView(MainWindow *parent):
     QString bgPath = Tool::getImgPath("background/backgroundBoard.png");
     Tool::setBackground(this, bgPath);
 
+    //预加载和缓存图片
+    cellOnPixmap.load(Tool::getImgPath("board/cellOn.png"));
+    cellOffPixmap.load(Tool::getImgPath("board/cellOff.png"));
+    //预加载拼图块图片
+    preloadPiecePixmaps();
+
     //初始化棋盘格子按钮数组
     cellButtons = {
         {ui->cell00, ui->cell01, ui->cell02, ui->cell03, ui->cell04, ui->cell05},
@@ -129,7 +135,7 @@ void BoardView::startGame(){
 void BoardView::onRowButtonClicked(int row){
     previousBoard = controller->getBoard();
     controller->turnRow(row);
-    if (mainWindow->getIsEffectPlaying()){
+    if (mainWindow->getIsEffectPlaying() && mainWindow->getIsAnimation()){
         Tool::playAudio(Tool::getAudioPath("effect/turn.mp3"), Tool::effect, false);
         Tool::setAudioVolume(Tool::effect, 50);
     }
@@ -139,7 +145,7 @@ void BoardView::onRowButtonClicked(int row){
 void BoardView::onColButtonClicked(int col){    
     previousBoard = controller->getBoard();
     controller->turnCol(col);
-    if (mainWindow->getIsEffectPlaying()){
+    if (mainWindow->getIsEffectPlaying() && mainWindow->getIsAnimation()){
         Tool::playAudio(Tool::getAudioPath("effect/turn.mp3"), Tool::effect, false);
         Tool::setAudioVolume(Tool::effect, 50);
     }
@@ -149,7 +155,7 @@ void BoardView::onColButtonClicked(int col){
 void BoardView::on_mdBtn_clicked(){    
     previousBoard = controller->getBoard();
     controller->turnMD();
-    if (mainWindow->getIsEffectPlaying()){
+    if (mainWindow->getIsEffectPlaying() && mainWindow->getIsAnimation()){
         Tool::playAudio(Tool::getAudioPath("effect/turn.mp3"), Tool::effect, false);
         Tool::setAudioVolume(Tool::effect, 50);
     }
@@ -159,13 +165,13 @@ void BoardView::on_mdBtn_clicked(){
 void BoardView::on_sdBtn_clicked(){    
     previousBoard = controller->getBoard();
     controller->turnSD();
-    if (mainWindow->getIsEffectPlaying()){
+    if (mainWindow->getIsEffectPlaying() && mainWindow->getIsAnimation()){
         Tool::playAudio(Tool::getAudioPath("effect/turn.mp3"), Tool::effect, false);
         Tool::setAudioVolume(Tool::effect, 50);
     }
     startTurnAnimation();
 }
-//显示答案
+//显示答案槽函数
 void BoardView::on_answerBtn_clicked(){
     Tool::clickedAnimation(ui->answerBtn, mainWindow->getIsAnimation(), menuClickedButtonStyle);
     if (!(controller->isGameFinished())){
@@ -180,18 +186,18 @@ void BoardView::on_answerBtn_clicked(){
         ui->messageLabel->setStyleSheet(messageTextStyle);
     });
 }
-//重新开始游戏
+//重新开始游戏槽函数
 void BoardView::on_restartBtn_clicked(){
     Tool::clickedAnimation(ui->restartBtn, mainWindow->getIsAnimation(), menuClickedButtonStyle);
     int delayTime;
-    if (mainWindow->getIsAnimation()) delayTime = 250;
+    if (mainWindow->getIsAnimation()) delayTime = 210;
     else delayTime = 0;
     QTimer::singleShot(delayTime, this, [this](){
         controller->restartGame();
         startGame();
     });
 }
-//返回菜单
+//返回菜单槽函数
 void BoardView::on_backBtn_clicked(){
     Tool::clickedAnimation(ui->backBtn, mainWindow->getIsAnimation(), menuClickedButtonStyle);
     int delayTime;
@@ -202,33 +208,49 @@ void BoardView::on_backBtn_clicked(){
     });
 }
 
+//预加载拼图块图片
+void BoardView::preloadPiecePixmaps(){
+    //计算拼图块的宽度和高度
+    int pieceWidth = cellOnPixmap.width() / 6;
+    int pieceHeight = cellOnPixmap.height() / 6;
+    
+    //预加载所有拼图块
+    for (int row = 0; row < 6; row++) {
+        for (int col = 0; col < 6; col++) {
+            //cellOn拼图块
+            int x = col * pieceWidth;
+            int y = (5 - row) * pieceHeight;  //注意：row从0到5，但图片中是从上到下
+            cellOnPiecePixmaps[row][col] = cellOnPixmap.copy(x, y, pieceWidth, pieceHeight);
+            
+            //cellOff拼图块
+            cellOffPiecePixmaps[row][col] = cellOffPixmap.copy(x, y, pieceWidth, pieceHeight);
+        }
+    }
+}
+
 //更新棋盘显示
 void BoardView::updateBoardDisplay(){
     std::vector<std::vector<bool>> board = controller->getBoard();
     int row = controller->getBoardConfig().rows;
     int col = controller->getBoardConfig().cols;
 
-    //加载拼图正面和反面大图路径
-    QString cellOnPath = Tool::getImgPath("board/cellOn.png");
-    QString cellOffPath = Tool::getImgPath("board/cellOff.png");
-    
-    //更新每个格子的图片
+    //更新每个格子的图片（使用缓存图片）
     for (int i=0; i<6; i++){
         for (int j=0; j<6; j++){
             //确保索引不越界
             if (i < row && j < col){
                 if (board[i][j]){
                     //激活状态（值为1） 显示正面图片
-                    Tool::setPuzzleBoardImage(cellButtons[i][j], cellOnPath, i, j, 6, 6);
+                    Tool::setPuzzleBoardImage(cellButtons[i][j], cellOnPiecePixmaps[i][j]);
                 }
                 else{
                     //关闭状态（值为0） 显示反面图片
-                    Tool::setPuzzleBoardImage(cellButtons[i][j], cellOffPath, i, j, 6, 6);
+                    Tool::setPuzzleBoardImage(cellButtons[i][j], cellOffPiecePixmaps[i][j]);
                 }
             }
             else{
                 //超出棋盘范围的格子显示默认正面
-                Tool::setPuzzleBoardImage(cellButtons[i][j], cellOnPath, i, j, 6, 6);
+                Tool::setPuzzleBoardImage(cellButtons[i][j], cellOnPiecePixmaps[i][j]);
             }
         }
     }
@@ -338,7 +360,7 @@ void BoardView::startTurnAnimation(){
         }
         
         if (!cellsToAnimate.empty()){
-            animationTimer->start(175);
+            animationTimer->start(200);
         }
         else{
             updateBoardDisplay();
@@ -356,15 +378,14 @@ void BoardView::startTurnAnimation(){
 void BoardView::updateSingleCell(int i, int j){
     std::vector<std::vector<bool>> board = controller->getBoard();
     
-    QString cellOnPath = Tool::getImgPath("board/cellOn.png");
-    QString cellOffPath = Tool::getImgPath("board/cellOff.png");
-    
     if (i < static_cast<int>(board.size()) && j < static_cast<int>(board[i].size())){
         if (board[i][j]){
-            Tool::setPuzzleBoardImage(cellButtons[i][j], cellOnPath, i, j, 6, 6);
+            //使用缓存的cellOn拼图块
+            Tool::setPuzzleBoardImage(cellButtons[i][j], cellOnPiecePixmaps[i][j]);
         }
         else{
-            Tool::setPuzzleBoardImage(cellButtons[i][j], cellOffPath, i, j, 6, 6);
+            //使用缓存的cellOff拼图块
+            Tool::setPuzzleBoardImage(cellButtons[i][j], cellOffPiecePixmaps[i][j]);
         }
     }
 }
@@ -380,8 +401,8 @@ void BoardView::addAnimation(QPushButton* btn){
     //创建顺序动画组
     auto seqGroup = std::make_unique<QSequentialAnimationGroup>(overlay);
     
-    //创建顺序动画组
-    seqGroup->addAnimation(Tool::createOpacityAnimation(opacityEffect, 0.0, 0.6, 100, QEasingCurve::InQuad).release());
+    //淡入动画
+    seqGroup->addAnimation(Tool::createOpacityAnimation(opacityEffect, 0.0, 0.5, 100, QEasingCurve::InQuad).release());
     
     //宽度缩小动画
     auto shrinkAnim = std::make_unique<QPropertyAnimation>(overlay, "geometry");
@@ -410,7 +431,7 @@ void BoardView::addAnimation(QPushButton* btn){
     seqGroup->addAnimation(expandAnim.release());
 
     //淡出动画
-    seqGroup->addAnimation(Tool::createOpacityAnimation(opacityEffect, 0.6, 0.0, 100, QEasingCurve::OutQuad).release());
+    seqGroup->addAnimation(Tool::createOpacityAnimation(opacityEffect, 0.5, 0.0, 100, QEasingCurve::OutQuad).release());
     
     //动画结束后删除覆盖层
     connect(seqGroup.get(), &QSequentialAnimationGroup::finished, overlay, &QWidget::deleteLater);

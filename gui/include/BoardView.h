@@ -10,7 +10,9 @@
 #include <QSequentialAnimationGroup>//用于创建顺序动画组
 #include <QEasingCurve>//用于创建缓动曲线
 #include <QParallelAnimationGroup>//用于创建并行动画组
+#include <QPixmap>//用于图片处理
 #include <vector>
+#include <utility>//用于pair类型
 
 namespace Ui{
 class BoardView;
@@ -47,6 +49,8 @@ private slots:
     void on_backBtn_clicked();
 
 private:
+    //图片预加载和设置函数
+    void preloadPiecePixmaps();
     //更新棋盘显示
     void updateBoardDisplay();
     void updateStepDisplay();
@@ -75,6 +79,12 @@ private:
     std::vector<std::pair<int, int>> cellsToAnimate;//存储待动画的格子坐标
     int currentAnimationIndex;//当前动画的格子索引
     bool isAnimating;//是否正在动画中
+
+    //图片缓存
+    QPixmap cellOnPixmap;//cellOn图片缓存
+    QPixmap cellOffPixmap;//cellOff图片缓存
+    QPixmap cellOnPiecePixmaps[6][6];//cellOn拼图块缓存
+    QPixmap cellOffPiecePixmaps[6][6];//cellOff拼图块缓存
 
     QString menuButtonStyle = "background-color: rgba(255, 255, 255, 0.1); color: rgba(255, 255, 255, 0.7); font-family:'Terminal'; font-size: 12px;";
     QString menuClickedButtonStyle = "background-color: rgba(0, 0, 0, 0.1); color: rgba(255, 255, 255, 0.8); font-family:'Terminal'; font-size: 12px;";

@@ -21,18 +21,10 @@ void Tool::setButtonImage(QPushButton* btn, const QString& imgPath){
     }
 }
 
-void Tool::setPuzzleBoardImage(QPushButton* btn, const QString& imgPath, int row, int col, int width, int height){
-    QPixmap fullPixmap(imgPath);
-    if (!fullPixmap.isNull()){
-        //拼图块的宽度和高度
-        int pieceWidth = fullPixmap.width()/width;
-        int pieceHeight = fullPixmap.height()/height;
-        //拼图块的坐标
-        int x = col * pieceWidth;
-        int y = (5-row) * pieceHeight;
-
-        QPixmap partPixmap = fullPixmap.copy(x, y, pieceWidth, pieceHeight);
-        btn->setIcon(partPixmap);
+//设置拼图板图片
+void Tool::setPuzzleBoardImage(QPushButton* btn, const QPixmap& pixmap) {
+    if (!pixmap.isNull()){
+        btn->setIcon(pixmap);
         btn->setIconSize(btn->size());
         btn->setText("");
     }
@@ -53,10 +45,10 @@ void Tool::setBackground(QWidget* widget, const QString& imgPath){
 }
 
 //添加静态成员变量定义
-QMediaPlayer* Tool::bgmPlayer = nullptr;
-QMediaPlayer* Tool::effectPlayer = nullptr;
-QAudioOutput* Tool::bgmAudioOutput = nullptr;
-QAudioOutput* Tool::effectAudioOutput = nullptr;
+std::unique_ptr<QMediaPlayer> Tool::bgmPlayer;
+std::unique_ptr<QMediaPlayer> Tool::effectPlayer;
+std::unique_ptr<QAudioOutput> Tool::bgmAudioOutput;
+std::unique_ptr<QAudioOutput> Tool::effectAudioOutput;
 
 QString Tool::getAudioPath(const QString& path){
     return QString("qrc:/audio/%1").arg(path);
@@ -67,21 +59,21 @@ void Tool::playAudio(const QString& audioPath, audio type, bool loop){
     
     if (type == bgm){
         if (!bgmPlayer){
-            bgmPlayer = new QMediaPlayer();
-            bgmAudioOutput = new QAudioOutput();
+            bgmPlayer = std::make_unique<QMediaPlayer>();
+            bgmAudioOutput = std::make_unique<QAudioOutput>();
             bgmAudioOutput->setVolume(0.5);
-            bgmPlayer->setAudioOutput(bgmAudioOutput);
+            bgmPlayer->setAudioOutput(bgmAudioOutput.get());
         }
-        MediaPlayer = bgmPlayer;
+        MediaPlayer = bgmPlayer.get();
     }
     else if(type == effect){
         if (!effectPlayer){
-            effectPlayer = new QMediaPlayer();
-            effectAudioOutput = new QAudioOutput();
+            effectPlayer = std::make_unique<QMediaPlayer>();
+            effectAudioOutput = std::make_unique<QAudioOutput>();
             effectAudioOutput->setVolume(1);
-            effectPlayer->setAudioOutput(effectAudioOutput);
+            effectPlayer->setAudioOutput(effectAudioOutput.get());
         }
-        MediaPlayer = effectPlayer;
+        MediaPlayer = effectPlayer.get();
     }
     
     if (MediaPlayer){
@@ -118,17 +110,13 @@ void Tool::resumeAudio(audio type){
 void Tool::stopAudio(audio type){
     if (type == bgm && bgmPlayer){
         bgmPlayer->stop();
-        delete bgmPlayer;
-        delete bgmAudioOutput;
-        bgmPlayer = nullptr;
-        bgmAudioOutput = nullptr;
+        bgmPlayer.reset();
+        bgmAudioOutput.reset();
     }
     else if (type == effect && effectPlayer){
         effectPlayer->stop();
-        delete effectPlayer;
-        delete effectAudioOutput;
-        effectPlayer = nullptr;
-        effectAudioOutput = nullptr;
+        effectPlayer.reset();
+        effectAudioOutput.reset();
     }
 }
 
@@ -171,6 +159,7 @@ std::unique_ptr<QPropertyAnimation> Tool::createOpacityAnimation(QGraphicsOpacit
     anim->setEasingCurve(curve);
     return anim;
 }
+//创建缩放动画
 std::unique_ptr<QPropertyAnimation> Tool::createScaleAnimation(QWidget* target, const QRect& start, const QRect& end, int duration, QEasingCurve::Type curve){
     auto anim = std::make_unique<QPropertyAnimation>(target, "geometry");//"geometry"是几何属性的名称，用于创建缩放动画
     anim->setStartValue(start);

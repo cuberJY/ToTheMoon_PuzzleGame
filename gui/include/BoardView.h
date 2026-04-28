@@ -26,7 +26,11 @@ public:
     explicit BoardView(MainWindow *parent = nullptr);
     ~BoardView();
 
-    void setDifficulty(ModeManager::diff diff);
+    void setController(BoardController* c);
+    void setGameMode(GameMode* mode);
+    ModeType getCurrentMode();
+    void setDiff(Diff diff);
+    void setLevel(int level);
     void startGame();
 
 signals:
@@ -42,11 +46,13 @@ private slots:
     void on_mdBtn_clicked();
     void on_sdBtn_clicked();
     //显示答案按钮点击槽函数
-    void on_answerBtn_clicked();
+    void on_functionBtn1_clicked();
     //重新开始按钮点击槽函数
-    void on_restartBtn_clicked();
+    void on_functionBtn2_clicked();
     //返回按钮点击槽函数
     void on_backBtn_clicked();
+    //倒计时
+    void onCountdownTick();
 
 private:
     //图片预加载和设置函数
@@ -55,6 +61,8 @@ private:
     void updateBoardDisplay();
     void updateStepDisplay();
     void updateStreakDisplay();
+    void updateRemStepLabel();
+    void setTimeLabel();
     //设置操作按钮的启用状态
     void setButtonsEnabled(bool enabled, bool setVisual);
     //检查游戏状态
@@ -69,29 +77,26 @@ private:
     QSequentialAnimationGroup* shineAnimation();
     QSequentialAnimationGroup* borderAnimation();
 
-    Ui::BoardView *ui;//UI界面指针
-    BoardController* controller;//游戏控制器指针
+    Ui::BoardView *ui;
+    BoardController* controller;
+    MainWindow* mainWindow;
+    
     std::vector<std::vector<QPushButton*>> cellButtons;//棋盘格子按钮数组
     std::vector<std::vector<bool>> previousBoard;//保存上一状态的棋盘状态
-    MainWindow* mainWindow;//主窗口指针
-    
-    QTimer *animationTimer;//控制动画时序的定时器
     std::vector<std::pair<int, int>> cellsToAnimate;//存储待动画的格子坐标
+
+    QTimer *animationTimer;//控制动画时序的定时器
     int currentAnimationIndex;//当前动画的格子索引
     bool isAnimating;//是否正在动画中
+
+    QTimer *countdownTimer;//倒计时定时器
+    int remainingTime;//倒计时剩余秒数
 
     //图片缓存
     QPixmap cellOnPixmap;//cellOn图片缓存
     QPixmap cellOffPixmap;//cellOff图片缓存
     QPixmap cellOnPiecePixmaps[6][6];//cellOn拼图块缓存
     QPixmap cellOffPiecePixmaps[6][6];//cellOff拼图块缓存
-
-    QString menuButtonStyle = "background-color: rgba(255, 255, 255, 0.1); color: rgba(255, 255, 255, 0.7); font-family:'Terminal'; font-size: 12px;";
-    QString menuClickedButtonStyle = "background-color: rgba(0, 0, 0, 0.1); color: rgba(255, 255, 255, 0.8); font-family:'Terminal'; font-size: 12px;";
-    QString diffTextStyle = "color: rgba(255, 255, 255, 0.7); font-family:'Terminal'; font-size: 20px;";
-    QString messageTextStyle = "color: rgba(255, 255, 255, 0.7); font-family:'Terminal'; font-size: 16px;";
-    QString stepTextStyle = "color: rgba(255, 255, 255, 0.5); font-family:'Century Schoolbook'; font-size: 28px;";
-    QString streakTextStyle = "color: rgba(255, 255, 255, 0.7); font-family:'Terminal'; font-size: 20px;";
 };
 
 #endif // BOARDVIEW_H

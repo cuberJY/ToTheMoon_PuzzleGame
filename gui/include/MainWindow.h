@@ -1,7 +1,9 @@
 #ifndef MAINWINDOW_H
 #define MAINWINDOW_H
 
-#include "ModeManager.h"
+#include "BoardController.h"
+#include "Home.h"
+#include "ChooseLevel.h"
 #include "ChooseDiff.h"
 #include "BoardView.h"
 #include <QMainWindow>
@@ -21,47 +23,55 @@ public:
     explicit MainWindow(QWidget *parent = nullptr); 
     ~MainWindow();
 
-    bool getIsBgmPlaying() const;
-    void setIsBgmPlaying(bool value);
-    bool getIsEffectPlaying() const;
-    void setIsEffectPlaying(bool value);
-    bool getIsAnimation() const;
-    void setIsAnimation(bool value);
+    bool getIsBgmPlaying() const;//获取背景音乐播放状态
+    void setIsBgmPlaying(bool value);//设置背景音乐播放状态
+    bool getIsEffectPlaying() const;//获取音效播放状态
+    void setIsEffectPlaying(bool value);//设置音效播放状态
+    bool getIsAnimation() const;//获取动画播放状态
+    void setIsAnimation(bool value);//设置动画播放状态
+
+    int getPlayerMaxLevel() const;
+    BoardController* getController() const;
 
 private slots:
-    //难度选择槽函数
-    void onDifficultySelected(ModeManager::diff diff);
+    //模式选择槽函数
+    void onRandomModeSelected();
+    void onLevelModeSelected();
+    void onDifficultySelected(Diff diff);
+    void onLevelSelected(int level);
     //返回菜单槽函数
     void onBackToMenu();
+    //设置相关槽函数
+    void on_backButton_clicked();
     void on_settingsBtn_clicked();
     void on_bgmBtn_clicked();
     void on_effectBtn_clicked();
     void on_animationBtn_clicked();
 
 private:
-    void initialSettingsButtons();//初始化设置按钮
-    void showSettingsMenu();//显示设置菜单
-    void hideSettingsMenu();//隐藏设置菜单
+    //设置菜单相关函数
+    void initialSettingsButtons();
+    void showSettingsMenu();
+    void hideSettingsMenu();
 
     QStackedWidget *stackedWidget;//堆叠窗口，用于切换界面
-    ChooseDiff *chooseDiffWidget;//难度选择界面
-    BoardView *boardWidget;//游戏棋盘界面
-
-    bool isBgmPlaying;//是否正在播放bgm
-    bool isEffectPlaying;//是否正在播放音效
-    bool isAnimation;//是否播放动画
-
+    Home *homeWidget;
+    ChooseLevel *chooseLevelWidget;
+    ChooseDiff *chooseDiffWidget;
+    BoardView *boardWidget;
+    BoardController *controller;
+    //设置菜单相关状态
+    bool isBgmPlaying;
+    bool isEffectPlaying;
+    bool isAnimation;
+    bool settingsMenuExpanded;
+    //设置菜单相关组件
+    QPushButton *backButton;
     QPushButton *settingsBtn;
     QPushButton *bgmBtn;
     QPushButton *effectBtn;
     QPushButton *animationBtn;
-    bool settingsMenuExpanded;
     QWidget *settingsOverlay;
-
-    QString settingsButtonStyle = "background-color: rgba(255, 255, 255, 0.1); color: rgba(255, 255, 255, 0.7); font-family:'Terminal'; font-size: 12px;";
-    QString settingsClickedButtonStyle = "background-color: rgba(0, 0, 0, 0.75); color: rgba(255, 255, 255, 0.8); font-family:'Terminal'; font-size: 12px;";
-    QString settingsOnButtonStyle = "background-color: rgba(255, 255, 255, 0.5); color: rgba(64, 64, 64, 0.6); font-family:'Terminal'; font-size: 12px;";
-    QString settingsOffButtonStyle = "background-color: rgba(255, 255, 255, 0.1); color: rgba(255, 255, 255, 0.7); font-family:'Terminal'; font-size: 12px;";
 };
 
 #endif

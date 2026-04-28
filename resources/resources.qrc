@@ -7,6 +7,21 @@
         <!-- Board images -->
         <file>images/board/cellOn.png</file>
         <file>images/board/cellOff.png</file>
+        <file>images/board/level01.png</file>
+        <file>images/board/level02.png</file>
+        <file>images/board/level03.png</file>
+        <file>images/board/level04.png</file>
+        <file>images/board/level05.png</file>
+        <file>images/board/level06.png</file>
+        <file>images/board/level07.png</file>
+        <file>images/board/level08.png</file>
+        <file>images/board/level09.png</file>
+        <file>images/board/level10.png</file>
+        <file>images/board/level11.png</file>
+        <file>images/board/level12.png</file>
+        <file>images/board/level13.png</file>
+        <file>images/board/level14.png</file>
+        <file>images/board/level15.png</file>
         
         <!-- Button images -->
         <file>images/buttons/rowBtn0.png</file>

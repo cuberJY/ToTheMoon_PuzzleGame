@@ -1,16 +1,18 @@
-#include "PuzzleBoard.h"
-#include <iostream>
+﻿#include "PuzzleBoard.h"
 #include <vector>
 #include <string>
 #include <random>
 using namespace std;
 
 //构造函数初始化 m*n
-PuzzleBoard::PuzzleBoard(int m, int n, bool md, bool sd):initialMinStep(0){
-    row = m;
-    col = n;
-    isMD = md;
-    isSD = sd;
+PuzzleBoard::PuzzleBoard(int m, int n, bool md, bool sd, int limitstep, int limittime)
+    : row(m)
+    , col(n)
+    , isMD(md)
+    , isSD(sd)
+    , limitStep(limitstep)
+    , limitTime(limittime)
+    , initialMinStep(0){
     
     opCount = row + col;
     if (isSD) opCount++;
@@ -18,9 +20,26 @@ PuzzleBoard::PuzzleBoard(int m, int n, bool md, bool sd):initialMinStep(0){
     board.assign(row, vector<bool>(col, true));
 }
 
+void PuzzleBoard::setBoard(const std::vector<std::vector<bool>>& newBoard){
+    board = newBoard;
+    playerStep = 0;
+    initialMinStep = getMinStep();
+    if (limitStep >= 0) limitStep += initialMinStep;
+}
+
 int PuzzleBoard::getRow() const {return row;}
 int PuzzleBoard::getCol() const {return col;}
-vector<vector<bool>> PuzzleBoard::getBoard() const {return board;}
+const vector<vector<bool>>& PuzzleBoard::getBoard() const {return board;}
+
+
+void PuzzleBoard::setLimitStep(int limitStep){
+    this->limitStep = limitStep;
+}
+int PuzzleBoard::getLimitStep() const {return limitStep;}
+void PuzzleBoard::setLimitTime(int limitTime){
+    this->limitTime = limitTime;
+}
+int PuzzleBoard::getLimitTime() const {return limitTime;}
 
 bool PuzzleBoard::isFinished() const {
     for (int i=0; i<row; i++){
@@ -29,6 +48,11 @@ bool PuzzleBoard::isFinished() const {
         }
     }
     return true;
+}
+bool PuzzleBoard::isFailed() const{
+    if (limitStep < initialMinStep) return false;
+    if (playerStep >= limitStep) return true;
+    return false;
 }
 
 //玩家操作 (m+n+2)种
@@ -79,7 +103,12 @@ void PuzzleBoard::randomBoard(){
     
     playerStep = 0;
     initialMinStep = getMinStep();
-    if (initialMinStep < 3) randomBoard();
+    if (initialMinStep < 3){
+        randomBoard();
+    }
+    else{
+        limitStep += initialMinStep;
+    }
 }
 
 int PuzzleBoard::getMinStep(){
@@ -95,7 +124,7 @@ int PuzzleBoard::getInitialMinStep() const {
 
 std::string PuzzleBoard::getBestSolveString(){
     bestSolve();
-    if (minStep == 0) return "您已完成游戏，请点击[再来一局]";
+    if (minStep == 0) return "您已完成游戏\n请点击[再来一局]";
     std::string answer = "答案：\n";
     // 处理行操作
     for (int i=row-1; i>=0; i--){

@@ -1,7 +1,7 @@
 #ifndef CHOOSEDIFF_H
 #define CHOOSEDIFF_H
 
-#include "ModeManager.h"
+#include "RandomMode.h"
 #include <QWidget>
 
 namespace Ui{
@@ -21,19 +21,15 @@ public:
 
 signals:
     //难度选择信号，发送选择的难度
-    void difficultySelected(ModeManager::diff diff);
+    void difficultySelected(Diff diff);
 
 private slots:
     //通用难度按钮点击槽函数
-    void onDiffButtonClicked(ModeManager::diff diff);
+    void onDiffButtonClicked(Diff diff);
 
 private:    
-    Ui::ChooseDiff *ui;//UI界面指针
-    MainWindow* mainWindow;//主窗口指针
-
-    QString chooseButtonStyle = "background-color: rgba(255, 255, 255, 0.1); color: rgba(255, 255, 255, 0.7); font-family:'Century Schoolbook'; font-size: 32px;";
-    QString chooseClickedButtonStyle = "background-color: rgba(0, 0, 0, 0.1); color: rgba(255, 255, 255, 0.8); font-family:'Century Schoolbook'; font-size: 32px;";
-    QString LabelStyle = "color: rgba(255, 255, 255, 0.7); font-family:'Century Schoolbook'; font-size: 8px;";
+    Ui::ChooseDiff *ui;
+    MainWindow* mainWindow;
 };
 
 #endif // CHOOSEDIFF_H

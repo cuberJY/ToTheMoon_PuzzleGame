@@ -1,130 +1,197 @@
 #include "BoardController.h"
 #include "PuzzleBoard.h"
-#include "ModeManager.h"
+#include "GameMode.h"
+#include "RandomMode.h"
+#include "LevelMode.h"
 #include "PlayerData.h"
 
 BoardController::BoardController():
     puzzleBoard(nullptr),
-    modeManager(new ModeManager()),
-    playerData(new PlayerData())
-{    
-    modeManager->setMode(ModeManager::mode::random);
+    gameMode(nullptr),
+    playerData(new PlayerData()),
+    currentDiff(Diff::easy),
+    timedOut(false)
+{
 }
 
 BoardController::~BoardController(){
     if (puzzleBoard) delete puzzleBoard;
-    if (modeManager) delete modeManager;
+    if (gameMode) delete gameMode;
     if (playerData) delete playerData;
 }
 
-void BoardController::setDifficulty(ModeManager::diff diff) {
-    modeManager->setRandomDiff(diff);
-    playerData->resetStreak();
+//游戏模式设置
+void BoardController::setGameMode(GameMode* mode){
+    if (gameMode) delete gameMode;
+    gameMode = mode;
+}
+ModeType BoardController::getCurrentMode() const{
+    return currentMode;
 }
 
-ModeManager::diff BoardController::getDifficulty() const{
-    return modeManager->getRandomDiff();
-}
-
+//开始游戏
 void BoardController::startGame(){
     if (puzzleBoard){
         delete puzzleBoard;
     }
-    puzzleBoard = new PuzzleBoard(modeManager->createBoard());
+    currentMode = gameMode->getModeType();
+    puzzleBoard = new PuzzleBoard(gameMode->createBoard());
+    timedOut = false;
 }
-
+//重新开始游戏
 void BoardController::restartGame(){
-    if (!isGameFinished()){
+    if (currentMode == ModeType::Random && !isGameFinished()){
         playerData->resetStreak();
     }
     startGame();
 }
 
+//游戏操作
 void BoardController::turnRow(int row){
     puzzleBoard->turnRow(row);
     checkGameState();
 }
-
 void BoardController::turnCol(int col){
     puzzleBoard->turnCol(col);
     checkGameState();
 }
-
 void BoardController::turnMD(){
     puzzleBoard->turnMD();
     checkGameState();
 }
-
 void BoardController::turnSD(){
     puzzleBoard->turnSD();
     checkGameState();
 }
 
+//判断游戏是否完成
 bool BoardController::isGameFinished() const{
     return puzzleBoard->isFinished();
 }
-
+//判断游戏是否失败
 bool BoardController::isGameFailed() const{
-    if (!puzzleBoard) return false;
-    
-    ModeManager::diff diff = modeManager->getRandomDiff();
-    int playerStep = puzzleBoard->getPlayerStep();
-    int initialMinStep = puzzleBoard->getInitialMinStep();
-    
-    if (diff == ModeManager::diff::hard){
-        return playerStep >= initialMinStep + 2;
-    }
-    else if (diff == ModeManager::diff::hardcore){
-        return playerStep >= initialMinStep;
-    }
-    return false;
+    return timedOut || puzzleBoard->isFailed();
 }
-
+//检查游戏状态
 void BoardController::checkGameState(){
-    if (modeManager->getRandomDiff() >= ModeManager::diff::hard){
+    if (currentMode == ModeType::Random){
         if (isGameFinished()){
-            playerData->updateStreak(modeManager->getRandomDiff());
+            playerData->updateStreak(currentDiff);
         }
         else if (isGameFailed()){
             playerData->resetStreak();
         }
     }
+    else if (currentMode == ModeType::Level){
+        if (isGameFinished()){
+            updateMaxLevel();
+        }
+    }
 }
 
+//获取当前玩家操作次数
 int BoardController::getPlayerStep() const{
     return puzzleBoard->getPlayerStep();
 }
-
+//获取初始最小操作次数
 int BoardController::getInitialMinStep() const{
     return puzzleBoard->getInitialMinStep();
 }
+//获取当前拼图板状态
+const std::vector<std::vector<bool>>& BoardController::getBoard() const{
+    return puzzleBoard->getBoard();
+}
+//获取当前拼图板配置
+BoardConfig BoardController::getBoardConfig() const{
+    return gameMode->getBoardConfig();
+}
+//获取最佳解决路径字符串
+QString BoardController::getBestSolveString() const{
+    return QString::fromStdString(puzzleBoard->getBestSolveString());
+}
+//倒计时
+bool BoardController::isCountdownEnabled() const{
+    return puzzleBoard->getLimitTime() > 0;
+}
+void BoardController::setTimedOut(bool value){
+    timedOut = value;
+}
+bool BoardController::isTimedOut() const{
+    return timedOut;
+}
+//剩余步数
+int BoardController::getRemStep() const{
+    return puzzleBoard->getLimitStep() - puzzleBoard->getPlayerStep();
+}
 
+//====================随机模式====================
+//设置游戏难度
+void BoardController::setDiff(Diff diff){
+    currentDiff = diff;
+    gameMode->setDiff(diff);
+    playerData->resetStreak();
+}
+//获取游戏难度
+Diff BoardController::getCurrentDiff() const{
+    return currentDiff;
+}
+//重置当前连胜次数
 void BoardController::resetStreak(){
     playerData->resetStreak();
 }
-
+//获取当前连胜次数
 int BoardController::getCurrentStreak() const{
     return playerData->getCurrentStreak();
 }
-
-int BoardController::getMaxStreak(ModeManager::diff diff) const{
-    if (diff == ModeManager::diff::hard){
+//获取最大连胜次数
+int BoardController::getMaxStreak(Diff diff) const{
+    if (diff == Diff::hard){
         return playerData->getMaxStreakHard();
     }
-    else if (diff == ModeManager::diff::hardcore){
+    else if (diff == Diff::hardcore){
         return playerData->getMaxStreakHardcore();
     }
     return 0;
 }
 
-std::vector<std::vector<bool>> BoardController::getBoard(){
-    return puzzleBoard->getBoard();
+//====================关卡模式====================
+//设置当前关卡
+void BoardController::setLevel(int level){
+    gameMode->setLevel(level);
 }
-
-ModeManager::BoardConfig BoardController::getBoardConfig() const{
-    return modeManager->getBoardConfig();
+//获取当前关卡
+int BoardController::getCurrentLevel() const{
+    return gameMode->getCurrentLevel();
 }
-
-QString BoardController::getBestSolveString() const{
-    return QString::fromStdString(puzzleBoard->getBestSolveString());
+//下一关
+void BoardController::nextLevel(){
+    int next = gameMode->getCurrentLevel() + 1;
+    if (next >= gameMode->getTotalLevel()){
+        return;
+    }
+    gameMode->setLevel(next);
+    startGame();
+}
+//上一关
+void BoardController::prevLevel(){
+    int prev = gameMode->getCurrentLevel() - 1;
+    if (prev < 0){
+        return;
+    }
+    gameMode->setLevel(prev);
+    startGame();
+}
+//获取总关卡数
+int BoardController::getTotalLevel() const{
+    return gameMode->getTotalLevel();
+}
+//更新玩家最大关卡
+void BoardController::updateMaxLevel(){
+    if (gameMode->getCurrentLevel() == playerData->getMaxLevel()){
+        playerData->setMaxLevel(gameMode->getCurrentLevel() + 1);
+    }
+}
+//获取玩家最大关卡
+int BoardController::getPlayerMaxLevel() const{
+    return playerData->getMaxLevel();
 }

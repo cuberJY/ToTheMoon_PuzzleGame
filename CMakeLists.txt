@@ -14,15 +14,18 @@ set(CMAKE_AUTORCC ON)
 
 # 手动指定源文件
 set(CORE_SOURCES
-    core/src/ModeManager.cpp
+    core/src/LevelMode.cpp
     core/src/PlayerData.cpp
     core/src/PuzzleBoard.cpp
+    core/src/RandomMode.cpp
 )
 
 set(GUI_SOURCES
     gui/src/BoardController.cpp
     gui/src/BoardView.cpp
     gui/src/ChooseDiff.cpp
+    gui/src/ChooseLevel.cpp
+    gui/src/Home.cpp
     gui/src/MainWindow.cpp
     gui/src/Tool.cpp
     gui/src/main_gui.cpp
@@ -30,15 +33,19 @@ set(GUI_SOURCES
 
 # 收集头文件
 set(CORE_HEADERS
-    core/include/ModeManager.h
+    core/include/GameMode.h
+    core/include/LevelMode.h
     core/include/PlayerData.h
     core/include/PuzzleBoard.h
+    core/include/RandomMode.h
 )
 
 set(GUI_HEADERS
     gui/include/BoardController.h
     gui/include/BoardView.h
     gui/include/ChooseDiff.h
+    gui/include/ChooseLevel.h
+    gui/include/Home.h
     gui/include/MainWindow.h
     gui/include/Tool.h
 )
@@ -47,6 +54,8 @@ set(GUI_HEADERS
 set(UI_FILES
     gui/src/BoardView.ui
     gui/src/ChooseDiff.ui
+    gui/src/ChooseLevel.ui
+    gui/src/Home.ui
 )
 
 # 收集资源文件

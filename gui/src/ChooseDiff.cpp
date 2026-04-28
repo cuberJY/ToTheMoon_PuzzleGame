@@ -1,9 +1,7 @@
-﻿#include "ChooseDiff.h"
+#include "ChooseDiff.h"
 #include "MainWindow.h"
 #include "Tool.h"
 #include "ui_ChooseDiff.h"
-#include <QDir>
-#include <QColor>
 #include <QTimer>
 
 //构造函数，初始化难度选择界面
@@ -17,38 +15,38 @@ ChooseDiff::ChooseDiff(MainWindow *parent)
     //设置背景图片
     QString bgPath = Tool::getImgPath("background/backgroundRandom.png");
     Tool::setBackground(this, bgPath);
-
-    ui->easyButton->setStyleSheet(chooseButtonStyle);
-    ui->normalButton->setStyleSheet(chooseButtonStyle);
-    ui->hardButton->setStyleSheet(chooseButtonStyle);
-    ui->hardcoreButton->setStyleSheet(chooseButtonStyle);
-
-    ui->introduction1->setStyleSheet(LabelStyle);
-    ui->introduction2->setStyleSheet(LabelStyle);
-
-    connect(ui->easyButton, &QPushButton::clicked, this, [this]() {onDiffButtonClicked(ModeManager::diff::easy);});
-    connect(ui->normalButton, &QPushButton::clicked, this, [this]() {onDiffButtonClicked(ModeManager::diff::normal);});
-    connect(ui->hardButton, &QPushButton::clicked, this, [this]() {onDiffButtonClicked(ModeManager::diff::hard);});
-    connect(ui->hardcoreButton, &QPushButton::clicked, this, [this]() {onDiffButtonClicked(ModeManager::diff::hardcore);});
+    //设置按钮样式
+    ui->easyButton->setStyleSheet(Tool::chooseButtonStyle);
+    ui->normalButton->setStyleSheet(Tool::chooseButtonStyle);
+    ui->hardButton->setStyleSheet(Tool::chooseButtonStyle);
+    ui->hardcoreButton->setStyleSheet(Tool::chooseButtonStyle);
+    //设置标签样式
+    ui->introduction1->setStyleSheet(Tool::LabelStyle);
+    ui->introduction2->setStyleSheet(Tool::LabelStyle);
+    //连接按钮点击信号槽
+    connect(ui->easyButton, &QPushButton::clicked, this, [this]() {onDiffButtonClicked(Diff::easy);});
+    connect(ui->normalButton, &QPushButton::clicked, this, [this]() {onDiffButtonClicked(Diff::normal);});
+    connect(ui->hardButton, &QPushButton::clicked, this, [this]() {onDiffButtonClicked(Diff::hard);});
+    connect(ui->hardcoreButton, &QPushButton::clicked, this, [this]() {onDiffButtonClicked(Diff::hardcore);});
 }
 
 ChooseDiff::~ChooseDiff()
 {
     delete ui;
 }
-
-void ChooseDiff::onDiffButtonClicked(ModeManager::diff diff){
+//难度按钮点击槽函数
+void ChooseDiff::onDiffButtonClicked(Diff diff){
     QPushButton* clickedBtn = nullptr;
-    switch (diff){
-        case ModeManager::diff::easy: clickedBtn = ui->easyButton; break;
-        case ModeManager::diff::normal: clickedBtn = ui->normalButton; break;
-        case ModeManager::diff::hard: clickedBtn = ui->hardButton; break;
-        case ModeManager::diff::hardcore: clickedBtn = ui->hardcoreButton; break;
+    switch (diff){//根据难度选择按钮
+        case Diff::easy: clickedBtn = ui->easyButton; break;
+        case Diff::normal: clickedBtn = ui->normalButton; break;
+        case Diff::hard: clickedBtn = ui->hardButton; break;
+        case Diff::hardcore: clickedBtn = ui->hardcoreButton; break;
     }
     if(clickedBtn){
-        Tool::clickedAnimation(clickedBtn, mainWindow->getIsAnimation(), chooseClickedButtonStyle);
+        Tool::clickedAnimation(clickedBtn, mainWindow->getIsAnimation(), Tool::chooseClickedButtonStyle);
     }
-
+    //设置按钮延迟时间，等待动画播放完成
     int delayTime;
     if (mainWindow->getIsAnimation()) delayTime = 225;
     else delayTime = 0;

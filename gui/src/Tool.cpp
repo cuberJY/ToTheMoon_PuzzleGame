@@ -1,4 +1,4 @@
-﻿#include "Tool.h"
+#include "Tool.h"
 #include <QWidget>
 #include <QString>
 #include <QPixmap>
@@ -8,19 +8,20 @@
 #include <QMediaPlayer>
 #include <QAudioOutput>
 
+//====================图片====================
+//获取图片路径
 QString Tool::getImgPath(const QString& path){
     return QString(":/images/%1").arg(path);
 }
-
+//设置按钮图片
 void Tool::setButtonImage(QPushButton* btn, const QString& imgPath){
-    QPixmap pixmap(imgPath);
+    QPixmap pixmap(imgPath);//创建QPixmap对象，用于加载和显示图片
     if (!pixmap.isNull()){
         btn->setIcon(pixmap);
         btn->setIconSize(btn->size());
         btn->setText("");
     }
 }
-
 //设置拼图板图片
 void Tool::setPuzzleBoardImage(QPushButton* btn, const QPixmap& pixmap) {
     if (!pixmap.isNull()){
@@ -29,7 +30,7 @@ void Tool::setPuzzleBoardImage(QPushButton* btn, const QPixmap& pixmap) {
         btn->setText("");
     }
 }
-
+//设置背景图片
 void Tool::setBackground(QWidget* widget, const QString& imgPath){
     QPixmap pixmap(imgPath);//QPixmap是Qt框架中用于处理和显示图像的类
     if (!pixmap.isNull()){
@@ -44,16 +45,17 @@ void Tool::setBackground(QWidget* widget, const QString& imgPath){
     }
 }
 
+//====================音频====================
 //添加静态成员变量定义
 std::unique_ptr<QMediaPlayer> Tool::bgmPlayer;
 std::unique_ptr<QMediaPlayer> Tool::effectPlayer;
 std::unique_ptr<QAudioOutput> Tool::bgmAudioOutput;
 std::unique_ptr<QAudioOutput> Tool::effectAudioOutput;
-
+//获取音频路径
 QString Tool::getAudioPath(const QString& path){
     return QString("qrc:/audio/%1").arg(path);
 }
-
+//播放音频
 void Tool::playAudio(const QString& audioPath, audio type, bool loop){
     QMediaPlayer* MediaPlayer = nullptr;
     
@@ -88,7 +90,7 @@ void Tool::playAudio(const QString& audioPath, audio type, bool loop){
         MediaPlayer->play();
     }
 }
-
+//暂停音频
 void Tool::pauseAudio(audio type){
     if (type == bgm && bgmPlayer){
         bgmPlayer->pause();
@@ -97,7 +99,7 @@ void Tool::pauseAudio(audio type){
         effectPlayer->pause();
     }
 }
-
+//恢复音频
 void Tool::resumeAudio(audio type){
     if (type == bgm && bgmPlayer){
         bgmPlayer->play();
@@ -106,7 +108,7 @@ void Tool::resumeAudio(audio type){
         effectPlayer->play();
     }
 }
-
+//停止音频
 void Tool::stopAudio(audio type){
     if (type == bgm && bgmPlayer){
         bgmPlayer->stop();
@@ -119,7 +121,7 @@ void Tool::stopAudio(audio type){
         effectAudioOutput.reset();
     }
 }
-
+//设置音频音量
 void Tool::setAudioVolume(audio type, int volume){
     // 将 0-100 的音量转换为 0.0-1.0
     qreal normalizedVolume = volume/100.0;
@@ -133,6 +135,8 @@ void Tool::setAudioVolume(audio type, int volume){
         effectAudioOutput->setVolume(normalizedVolume);
     }
 }
+
+//====================动画====================
 //创建覆盖层
 QWidget* Tool::createOverlay(QWidget* parent, const QRect& geometry, const QString& styleSheet, const QRegion& mask){
     QWidget* overlay = new QWidget(parent);
@@ -168,7 +172,7 @@ std::unique_ptr<QPropertyAnimation> Tool::createScaleAnimation(QWidget* target, 
     anim->setEasingCurve(curve);
     return anim;
 }
-
+//按钮点击动画
 void Tool::clickedAnimation(QPushButton* btn, bool isAnimation, const QString& onStyle){
     if (isAnimation){
         QString currentStyle = btn->styleSheet();

@@ -1,20 +1,23 @@
-﻿#include "BoardView.h"
+#include "BoardView.h"
 #include "BoardController.h"
 #include "MainWindow.h"
-#include "ModeManager.h"
 #include "Tool.h"
 #include "ui_BoardView.h"
+#include "RandomMode.h"
+#include "LevelMode.h"
 #include <memory>
 
 //构造函数，初始化棋盘界面
 BoardView::BoardView(MainWindow *parent):
     QWidget(parent),
     ui(new Ui::BoardView()),
-    controller(new BoardController()),
+    controller(nullptr),
     mainWindow(parent),
     animationTimer(new QTimer(this)),
     currentAnimationIndex(0),
-    isAnimating(false)
+    isAnimating(false),
+    countdownTimer(new QTimer(this)),
+    remainingTime(0)
 {
     ui->setupUi(this);
 
@@ -22,7 +25,6 @@ BoardView::BoardView(MainWindow *parent):
     QString bgPath = Tool::getImgPath("background/backgroundBoard.png");
     Tool::setBackground(this, bgPath);
 
-    //预加载和缓存图片
     cellOnPixmap.load(Tool::getImgPath("board/cellOn.png"));
     cellOffPixmap.load(Tool::getImgPath("board/cellOff.png"));
     //预加载拼图块图片
@@ -40,6 +42,8 @@ BoardView::BoardView(MainWindow *parent):
 
     //初始化动画定时器
     connect(animationTimer, &QTimer::timeout, this, &BoardView::animateNextCell);
+    //初始化倒计时定时器
+    connect(countdownTimer, &QTimer::timeout, this, &BoardView::onCountdownTick);
 
     //使用lambda表达式连接行、列按钮信号到通用槽函数
     QPushButton* rowBtns[] = {ui->rowBtn0, ui->rowBtn1, ui->rowBtn2, ui->rowBtn3, ui->rowBtn4, ui->rowBtn5};
@@ -49,7 +53,7 @@ BoardView::BoardView(MainWindow *parent):
         connect(colBtns[i], &QPushButton::clicked, this, [this, i]() {onColButtonClicked(i);});
     }
 
-    //控制翻转按钮设置图片
+    //设置控制翻转按钮图片
     for (int i=0; i<6; i++){
         QString rowBtnPath = Tool::getImgPath(QString("buttons/rowBtn%1.png").arg(i));
         Tool::setButtonImage(rowBtns[i], rowBtnPath);
@@ -59,52 +63,106 @@ BoardView::BoardView(MainWindow *parent):
     Tool::setButtonImage(ui->mdBtn, Tool::getImgPath("buttons/mdBtn.png"));
     Tool::setButtonImage(ui->sdBtn, Tool::getImgPath("buttons/sdBtn.png"));
 
-    //功能按钮设置
-    ui->backBtn->setStyleSheet(menuButtonStyle);
-    ui->answerBtn->setStyleSheet(menuButtonStyle);
-    ui->restartBtn->setStyleSheet(menuButtonStyle);
+    //设置功能按钮样式
+    ui->backBtn->setStyleSheet(Tool::menuButtonStyle);
+    ui->functionBtn1->setStyleSheet(Tool::menuButtonStyle);
+    ui->functionBtn2->setStyleSheet(Tool::menuButtonStyle);
 }
 
 //析构函数，释放资源
 BoardView::~BoardView(){
-    delete controller;
     delete ui;
 }
 
+void BoardView::setController(BoardController* c){
+    controller = c;
+}
+//设置游戏模式
+void BoardView::setGameMode(GameMode* mode){
+    controller->setGameMode(mode);
+}
+//获取游戏模式类型
+ModeType BoardView::getCurrentMode(){
+    return controller->getCurrentMode();
+}
 //设置游戏难度
-void BoardView::setDifficulty(ModeManager::diff diff){
-    controller->setDifficulty(diff);
+void BoardView::setDiff(Diff diff){
+    controller->setDiff(diff);
+}
+//设置游戏等级
+void BoardView::setLevel(int level){
+    controller->setLevel(level);
 }
 
 //开始游戏，初始化棋盘
 void BoardView::startGame(){
     controller->startGame();
 
-    ModeManager::BoardConfig boardConfig = controller->getBoardConfig();
+    BoardConfig boardConfig = controller->getBoardConfig();
 
-    //初始化难度标签
-    QString diffText;
-    switch (controller->getDifficulty()) {
-        case ModeManager::diff::easy: diffText = "简单"; break;
-        case ModeManager::diff::normal: diffText = "普通"; break;
-        case ModeManager::diff::hard: diffText = "困难"; break;
-        case ModeManager::diff::hardcore: diffText = "极限"; break;
+    //预加载和缓存图片
+    if (controller->getCurrentMode() == ModeType::Random){
+        cellOnPixmap.load(Tool::getImgPath("board/cellOn.png"));
     }
-    ui->diffLabel->setText(diffText);
-    ui->diffLabel->setStyleSheet(diffTextStyle);
+    else if (controller->getCurrentMode() == ModeType::Level){
+        cellOnPixmap.load(Tool::getImgPath(
+            QString("board/level%1.png")
+            .arg(controller->getCurrentLevel()+1, 2, 10, '0')
+        ));
+    }
+    preloadPiecePixmaps();
+
+    //初始化标签
+    QString labelText;
+    if (getCurrentMode() == ModeType::Random){
+        switch (controller->getCurrentDiff()) {
+            case Diff::easy: labelText = "简单"; break;
+            case Diff::normal: labelText = "普通"; break;
+            case Diff::hard: labelText = "困难"; break;
+            case Diff::hardcore: labelText = "极限"; break;
+        }
+    }
+    else if (getCurrentMode() == ModeType::Level){
+        labelText = QString("第%1关").arg(controller->getCurrentLevel()+1);
+    }
+    ui->titleLabel->setText(labelText);
+    ui->titleLabel->setStyleSheet(Tool::titleTextStyle);
+    ui->countDownLabel->setText("倒计时:");
+    ui->countDownLabel->setStyleSheet(Tool::countDownTextStyle);
+    updateRemStepLabel();
+
+    //初始化倒计时
+    if (controller->isCountdownEnabled()){
+        remainingTime = boardConfig.limitTime;
+        ui->timeLabel->setText(
+            QString("%1:%2")
+            .arg(remainingTime / 60, 2, 10, '0')
+            .arg(remainingTime % 60, 2, 10, '0')
+        );
+        ui->timeLabel->setStyleSheet(Tool::timeTextStyle);
+        ui->timeLabel->setVisible(true);
+        countdownTimer->start(1000);
+    }
+    else{
+        ui->countDownLabel->setVisible(false);
+        ui->timeLabel->setVisible(false);
+        countdownTimer->stop();
+    }
+
+    //显示/隐藏剩余步数标签
+    ui->remstepLabel->setVisible(boardConfig.limitStep >= 0);
     //根据难度显示/隐藏对角线按钮
-    ui->mdBtn->setVisible(boardConfig.isMD);
     ui->sdBtn->setVisible(boardConfig.isSD);
     //显示连胜统计标签
-    ui->streakLabel->setVisible(controller->getDifficulty() >= ModeManager::diff::hard);
+    ui->streakLabel->setVisible(boardConfig.limitStep >= 0 || boardConfig.limitTime >= 0);
     //清空消息标签
     ui->messageLabel->clear();
+
     //启用所有操作按钮
     setButtonsEnabled(true, true);
-
+    //显示所有行、列按钮和棋盘格子
     QPushButton* rowBtns[] = {ui->rowBtn0, ui->rowBtn1, ui->rowBtn2, ui->rowBtn3, ui->rowBtn4, ui->rowBtn5};
     QPushButton* colBtns[] = {ui->colBtn0, ui->colBtn1, ui->colBtn2, ui->colBtn3, ui->colBtn4, ui->colBtn5};
-
     for (int i=0; i<6; i++){
         rowBtns[i]->setVisible(true);
         colBtns[i]->setVisible(true);
@@ -113,6 +171,7 @@ void BoardView::startGame(){
             cellButtons[i][j]->setEnabled(true);
         }
     }
+
     //禁用部分行列
     for (int i=boardConfig.rows; i<6; i++){
         rowBtns[i]->setEnabled(false);
@@ -125,6 +184,18 @@ void BoardView::startGame(){
         for (int i=0; i<6; i++){
             cellButtons[i][j]->setEnabled(false);
         }
+    }
+
+    //根据当前模式设置返回按钮文本
+    if (getCurrentMode() == ModeType::Random){
+        ui->functionBtn1->setText("显示答案");
+        ui->functionBtn2->setText("再来一局");
+        ui->backBtn->setText("切换难度");
+    }
+    else if (getCurrentMode() == ModeType::Level){
+        ui->functionBtn1->setText("上一关");
+        ui->functionBtn2->setText("下一关");
+        ui->backBtn->setText("切换关卡");
     }
 
     //更新棋盘显示
@@ -171,35 +242,65 @@ void BoardView::on_sdBtn_clicked(){
     }
     startTurnAnimation();
 }
-//显示答案槽函数
-void BoardView::on_answerBtn_clicked(){
-    Tool::clickedAnimation(ui->answerBtn, mainWindow->getIsAnimation(), menuClickedButtonStyle);
-    if (!(controller->isGameFinished())){
-        controller->resetStreak();
+//显示答案/上一关槽函数
+void BoardView::on_functionBtn1_clicked(){
+    Tool::clickedAnimation(ui->functionBtn1, mainWindow->getIsAnimation(), Tool::menuClickedButtonStyle);
+    int delayTime;
+    if (mainWindow->getIsAnimation()) delayTime = 210;
+    else delayTime = 0;
+
+    if (getCurrentMode() == ModeType::Random){
+        if (!controller->isGameFinished()){
+            controller->resetStreak();
+            updateStreakDisplay();
+        }
+        QString answer = controller->getBestSolveString();
+        QTimer::singleShot(delayTime, this, [this, answer](){
+            ui->messageLabel->setText(answer);
+            ui->messageLabel->setStyleSheet(Tool::messageTextStyle);
+        });
     }
-    QString answer = controller->getBestSolveString();
-    int delayTime;
-    if (mainWindow->getIsAnimation()) delayTime = 210;
-    else delayTime = 0;
-    QTimer::singleShot(delayTime, this, [this, answer](){
-        ui->messageLabel->setText(answer);
-        ui->messageLabel->setStyleSheet(messageTextStyle);
-    });
+    else if (getCurrentMode() == ModeType::Level){
+        QTimer::singleShot(delayTime, this, [this](){
+            controller->prevLevel();
+            startGame();
+        });
+    }
 }
-//重新开始游戏槽函数
-void BoardView::on_restartBtn_clicked(){
-    Tool::clickedAnimation(ui->restartBtn, mainWindow->getIsAnimation(), menuClickedButtonStyle);
+//重新开始/下一关游戏槽函数
+void BoardView::on_functionBtn2_clicked(){
+    Tool::clickedAnimation(ui->functionBtn2, mainWindow->getIsAnimation(), Tool::menuClickedButtonStyle);
     int delayTime;
     if (mainWindow->getIsAnimation()) delayTime = 210;
     else delayTime = 0;
+
+    
     QTimer::singleShot(delayTime, this, [this](){
-        controller->restartGame();
-        startGame();
+        if (getCurrentMode() == ModeType::Random){
+            controller->restartGame();
+            startGame();
+        }
+        else if (getCurrentMode() == ModeType::Level){
+            if (controller->isGameFinished() || controller->getCurrentLevel() < controller->getPlayerMaxLevel()){
+                controller->nextLevel();
+                startGame();
+            }
+            else if (controller->isGameFailed()){
+                controller->restartGame();
+                startGame();
+            }
+            else{
+                ui->messageLabel->setText("当前关卡未完成");
+                ui->messageLabel->setStyleSheet(Tool::messageTextStyle);
+                ui->messageLabel->setStyleSheet("color: rgba(255, 127, 0, 0.7); font-size: 20px;");
+            }
+        }
     });
 }
 //返回菜单槽函数
 void BoardView::on_backBtn_clicked(){
-    Tool::clickedAnimation(ui->backBtn, mainWindow->getIsAnimation(), menuClickedButtonStyle);
+    Tool::clickedAnimation(ui->backBtn, mainWindow->getIsAnimation(), Tool::menuClickedButtonStyle);
+    countdownTimer->stop();
     int delayTime;
     if (mainWindow->getIsAnimation()) delayTime = 300;
     else delayTime = 0;
@@ -207,32 +308,41 @@ void BoardView::on_backBtn_clicked(){
         emit backToMenu();
     });
 }
+//倒计时
+void BoardView::onCountdownTick(){
+    remainingTime--;
+    setTimeLabel();
+}
 
 //预加载拼图块图片
 void BoardView::preloadPiecePixmaps(){
     //计算拼图块的宽度和高度
-    int pieceWidth = cellOnPixmap.width() / 6;
-    int pieceHeight = cellOnPixmap.height() / 6;
+    int onPieceWidth = cellOnPixmap.width() / 6;
+    int onPieceHeight = cellOnPixmap.height() / 6;
+    int offPieceWidth = cellOffPixmap.width() / 6;
+    int offPieceHeight = cellOffPixmap.height() / 6;
     
     //预加载所有拼图块
     for (int row = 0; row < 6; row++) {
         for (int col = 0; col < 6; col++) {
-            //cellOn拼图块
-            int x = col * pieceWidth;
-            int y = (5 - row) * pieceHeight;  //注意：row从0到5，但图片中是从上到下
-            cellOnPiecePixmaps[row][col] = cellOnPixmap.copy(x, y, pieceWidth, pieceHeight);
+            int xOn = col * onPieceWidth;
+            int yOn = (5 - row) * onPieceHeight;//row从0到5，但图片从上到下，需要倒序处理
+            cellOnPiecePixmaps[row][col] = cellOnPixmap.copy(xOn, yOn, onPieceWidth, onPieceHeight);
             
-            //cellOff拼图块
-            cellOffPiecePixmaps[row][col] = cellOffPixmap.copy(x, y, pieceWidth, pieceHeight);
+            int xOff = col * offPieceWidth;
+            int yOff = (5 - row) * offPieceHeight;
+            cellOffPiecePixmaps[row][col] = cellOffPixmap.copy(xOff, yOff, offPieceWidth, offPieceHeight);
         }
     }
 }
 
 //更新棋盘显示
 void BoardView::updateBoardDisplay(){
+    //获取当前棋盘状态
     std::vector<std::vector<bool>> board = controller->getBoard();
-    int row = controller->getBoardConfig().rows;
-    int col = controller->getBoardConfig().cols;
+    BoardConfig boardConfig = controller->getBoardConfig();
+    int row = boardConfig.rows;
+    int col = boardConfig.cols;
 
     //更新每个格子的图片（使用缓存图片）
     for (int i=0; i<6; i++){
@@ -240,11 +350,11 @@ void BoardView::updateBoardDisplay(){
             //确保索引不越界
             if (i < row && j < col){
                 if (board[i][j]){
-                    //激活状态（值为1） 显示正面图片
+                    //激活状态（值为1）显示正面图片
                     Tool::setPuzzleBoardImage(cellButtons[i][j], cellOnPiecePixmaps[i][j]);
                 }
                 else{
-                    //关闭状态（值为0） 显示反面图片
+                    //关闭状态（值为0）显示反面图片
                     Tool::setPuzzleBoardImage(cellButtons[i][j], cellOffPiecePixmaps[i][j]);
                 }
             }
@@ -254,12 +364,14 @@ void BoardView::updateBoardDisplay(){
             }
         }
     }
-
+    //更新步数显示
     updateStepDisplay();
+    updateRemStepLabel();
     
     //更新连胜统计显示
-    if (controller->getDifficulty() >= ModeManager::diff::hard){
+    if (boardConfig.limitStep >= 0 || boardConfig.limitTime >= 0){
         updateStreakDisplay();
+        updateRemStepLabel();
     }
 }
 
@@ -270,7 +382,7 @@ void BoardView::updateStepDisplay(){
         .arg(controller->getPlayerStep(), 2, 10, '0')
         .arg(controller->getInitialMinStep(), 2, 10, '0')
     );
-    ui->stepLabel->setStyleSheet(stepTextStyle);
+    ui->stepLabel->setStyleSheet(Tool::stepTextStyle);
 }
 
 //更新连胜统计显示
@@ -278,31 +390,69 @@ void BoardView::updateStreakDisplay(){
     QString streakText = 
         QString("连胜    %1\n最高    %2")
         .arg(controller->getCurrentStreak())
-        .arg(controller->getMaxStreak(controller->getDifficulty()));
+        .arg(controller->getMaxStreak(controller->getCurrentDiff()));
     ui->streakLabel->setText(streakText);
-    ui->streakLabel->setStyleSheet(streakTextStyle);
+    ui->streakLabel->setStyleSheet(Tool::streakTextStyle);
+}
+//更新剩余步数标签
+void BoardView::updateRemStepLabel(){
+    ui->remstepLabel->setText(
+        QString("  剩余\n  %1步")
+        .arg(controller->getRemStep(), 2, 10, '0')
+    );
+    ui->remstepLabel->setStyleSheet(Tool::remstepTextStyle);
+}
+//更新时间标签
+void BoardView::setTimeLabel(){
+    if (!controller->isCountdownEnabled()) return;
+
+    ui->timeLabel->setText(
+        QString("%1:%2")
+        .arg(remainingTime / 60, 2, 10, '0')
+        .arg(remainingTime % 60, 2, 10, '0')
+    );
+
+    if (remainingTime <= 10){
+        ui->timeLabel->setStyleSheet("color: rgba(255, 127, 0, 0.9); font-family:'Terminal'; font-size: 16px;");
+    }
+    if (remainingTime <= 0){
+        countdownTimer->stop();
+        controller->setTimedOut(true);
+        checkGameState();
+    }
 }
 
 //检查游戏状态
 void BoardView::checkGameState(){
     //检查是否胜利
     if (controller->isGameFinished()){
+        countdownTimer->stop();
         ui->messageLabel->setText(
             QString("游戏胜利！\n共 %1 步完成 (最佳: %2)")
             .arg(controller->getPlayerStep())
             .arg(controller->getInitialMinStep())
         );
-        ui->messageLabel->setStyleSheet(messageTextStyle);
-        ui->messageLabel->setStyleSheet("color: rgba(30, 255, 30, 0.7);");
+        ui->messageLabel->setStyleSheet(Tool::messageTextStyle);
+        ui->messageLabel->setStyleSheet("color: rgba(30, 255, 30, 0.7); font-size: 20px;");
         setButtonsEnabled(false, true);
         if (mainWindow->getIsEffectPlaying()) Tool::playAudio(Tool::getAudioPath("effect/finish.mp3"), Tool::effect, false);
         if (mainWindow->getIsAnimation()) startFinishAnimation();
     }
     //检查是否失败
     else if (controller->isGameFailed()){
-        ui->messageLabel->setText("步数超过限制\n游戏失败！");
-        ui->messageLabel->setStyleSheet(messageTextStyle);
-        ui->messageLabel->setStyleSheet("color: rgba(255, 50, 0, 0.7);");
+        countdownTimer->stop();
+        if (getCurrentMode() == ModeType::Level && controller->isGameFailed()){
+            ui->functionBtn2->setText("重新开始");
+        }
+
+        if(controller->isTimedOut()){
+            ui->messageLabel->setText("时间到\n游戏失败！");
+        }
+        else{
+            ui->messageLabel->setText("步数超过限制\n游戏失败！");
+        }
+        ui->messageLabel->setStyleSheet(Tool::messageTextStyle);
+        ui->messageLabel->setStyleSheet("color: rgba(255, 127, 0, 0.7); font-size: 20px;");
         setButtonsEnabled(false, true);
     }
 }
@@ -331,21 +481,30 @@ void BoardView::setButtonsEnabled(bool enabled, bool setVisual){
         ui->mdBtn->setAttribute(Qt::WA_TransparentForMouseEvents, !enabled);
         ui->sdBtn->setAttribute(Qt::WA_TransparentForMouseEvents, !enabled);
     }
-    //功能按钮始终保持启用状态
-    ui->answerBtn->setEnabled(true);
-    ui->restartBtn->setEnabled(true);
+    //启用/禁用功能按钮
+    ui->functionBtn1->setEnabled(true);
+    ui->functionBtn2->setEnabled(true);
     ui->backBtn->setEnabled(true);
+    if (getCurrentMode() == ModeType::Level){
+        if (controller->getCurrentLevel() <= 0){
+            ui->functionBtn1->setEnabled(false);
+        }
+        if (controller->getPlayerMaxLevel() >= controller->getTotalLevel()){
+            ui->functionBtn2->setEnabled(false);
+        }
+    }
 }
 
 //翻转动画
 void BoardView::startTurnAnimation(){
     if (mainWindow->getIsAnimation()){
         isAnimating = true;
-        setButtonsEnabled(false, false);
+        setButtonsEnabled(false, false);//禁用所有操作按钮
 
-        cellsToAnimate.clear();
-        currentAnimationIndex = 0;
-        
+        cellsToAnimate.clear();//清空待翻转的格子列表
+        currentAnimationIndex = 0;//重置动画索引
+
+        //获取当前棋盘状态
         std::vector<std::vector<bool>> currentBoard = controller->getBoard();
         int rows = controller->getBoardConfig().rows;
         int cols = controller->getBoardConfig().cols;
@@ -353,19 +512,19 @@ void BoardView::startTurnAnimation(){
         //逐个翻转
         for (int j=0; j<cols; j++){
             for (int i=0; i<rows; i++){
-                if (i < rows && j < cols && previousBoard[i][j] != currentBoard[i][j]){
-                    cellsToAnimate.push_back(std::make_pair(i, j));
+                if (i < rows && j < cols && previousBoard[i][j] != currentBoard[i][j]){//如果当前格子的状态与上一帧不同
+                    cellsToAnimate.push_back(std::make_pair(i, j));//将当前格子的坐标添加到待翻转列表
                 }
             }
         }
         
         if (!cellsToAnimate.empty()){
-            animationTimer->start(200);
+            animationTimer->start(200);//启动动画定时器，每***ms更新一次动画
         }
         else{
             updateBoardDisplay();
             checkGameState();
-            setButtonsEnabled(true, false);
+            setButtonsEnabled(true, false);//启用所有操作按钮
             isAnimating = false;
         }
     }
@@ -378,7 +537,7 @@ void BoardView::startTurnAnimation(){
 void BoardView::updateSingleCell(int i, int j){
     std::vector<std::vector<bool>> board = controller->getBoard();
     
-    if (i < static_cast<int>(board.size()) && j < static_cast<int>(board[i].size())){
+    if (i < static_cast<int>(board.size()) && j < static_cast<int>(board[i].size())){//判断坐标是否在棋盘范围内
         if (board[i][j]){
             //使用缓存的cellOn拼图块
             Tool::setPuzzleBoardImage(cellButtons[i][j], cellOnPiecePixmaps[i][j]);
@@ -405,17 +564,17 @@ void BoardView::addAnimation(QPushButton* btn){
     seqGroup->addAnimation(Tool::createOpacityAnimation(opacityEffect, 0.0, 0.5, 100, QEasingCurve::InQuad).release());
     
     //宽度缩小动画
-    auto shrinkAnim = std::make_unique<QPropertyAnimation>(overlay, "geometry");
-    QRect startRect = overlay->geometry();
-    QRect endRect = QRect(
+    auto shrinkAnim = std::make_unique<QPropertyAnimation>(overlay, "geometry");//创建QPropertyAnimation对象，用于动画覆盖层的几何属性
+    QRect startRect = overlay->geometry();//获取当前覆盖层的矩形区域
+    QRect endRect = QRect(//创建矩形（中心与当前覆盖层矩形相同，顶部与当前覆盖层矩形顶部相同，宽度为0，高度与当前覆盖层矩形相同）
         startRect.center().x(), startRect.top(),
         0, startRect.height()
     );
-    shrinkAnim->setStartValue(startRect);
-    shrinkAnim->setEndValue(endRect);
-    shrinkAnim->setDuration(200);
-    shrinkAnim->setEasingCurve(QEasingCurve::InOutQuad);
-    seqGroup->addAnimation(shrinkAnim.release());
+    shrinkAnim->setStartValue(startRect);//设置动画起始值为当前覆盖层矩形
+    shrinkAnim->setEndValue(endRect);//设置动画结束值为宽度为0的矩形
+    shrinkAnim->setDuration(200);//设置动画持续时间
+    shrinkAnim->setEasingCurve(QEasingCurve::InOutQuad);//设置动画曲线为二次函数
+    seqGroup->addAnimation(shrinkAnim.release());//添加宽度缩小动画到顺序组
 
     //宽度放大动画
     auto expandAnim = std::make_unique<QPropertyAnimation>(overlay, "geometry");
@@ -443,16 +602,16 @@ void BoardView::addAnimation(QPushButton* btn){
 //下一个cell动画函数
 void BoardView::animateNextCell(){
     if (currentAnimationIndex <static_cast<int>(cellsToAnimate.size())){
+        //获取当前待翻转的cell的坐标
         int i = cellsToAnimate[currentAnimationIndex].first;
         int j = cellsToAnimate[currentAnimationIndex].second;
-
         updateSingleCell(i, j);//更新cell显示
         addAnimation(cellButtons[i][j]);//添加动画效果
         
-        currentAnimationIndex++;
+        currentAnimationIndex++;//更新当前动画索引
     }
     else{
-        animationTimer->stop();
+        animationTimer->stop();//停止动画定时器
         updateBoardDisplay();//更新步数标签
         checkGameState();//检查游戏状态
         setButtonsEnabled(true, false);//重新启用按钮
@@ -465,12 +624,12 @@ void BoardView::startFinishAnimation(){
     //开始动画
     auto parallelGroup = std::make_unique<QParallelAnimationGroup>(this);
     
-    // 执行边框动画
+    //执行边框动画
     QSequentialAnimationGroup* borderGroup = borderAnimation();
     if (borderGroup) {
         parallelGroup->addAnimation(borderGroup);
     }
-    // 执行全屏动画
+    //执行全屏动画
     QSequentialAnimationGroup* shineGroup = shineAnimation();
     if (shineGroup) {
         parallelGroup->addAnimation(shineGroup);
@@ -479,53 +638,53 @@ void BoardView::startFinishAnimation(){
     //动画结束后清理
     connect(parallelGroup.get(), &QParallelAnimationGroup::finished, parallelGroup.get(), &QObject::deleteLater);
     
-    parallelGroup->start(QAbstractAnimation::DeleteWhenStopped);
-    parallelGroup.release();
+    parallelGroup->start(QAbstractAnimation::DeleteWhenStopped);//开始并行动画组
+    parallelGroup.release();//释放并行动画组
 }
-
+//边框动画
 QSequentialAnimationGroup* BoardView::borderAnimation(){
     //计算棋盘的边界
     QRect boardRect;
     auto calculateButtonBounds = [&boardRect, this](QPushButton* btn){
         if (btn){
-            QPoint topLeft = btn->mapTo(this, QPoint(0,0));
-            QRect btnRect(topLeft, btn->size());
+            QPoint topLeft = btn->mapTo(this, QPoint(0,0));//将按钮的左上角映射到父窗口坐标系
+            QRect btnRect(topLeft, btn->size());//创建按钮的矩形区域
             if (boardRect.isEmpty()){
-                boardRect = btnRect;
+                boardRect = btnRect;//如果棋盘矩形为空，直接赋值为按钮矩形
             }
             else{
-                boardRect = boardRect.united(btnRect);
+                boardRect = boardRect.united(btnRect);//否则，合并棋盘矩形和按钮矩形
             }
         }
     };
-    for (const auto& row : cellButtons){
+    for (const auto& row : cellButtons){//遍历每一行的按钮
         for (QPushButton* btn : row){
-            calculateButtonBounds(btn);
+            calculateButtonBounds(btn);//计算按钮的边界
         }
     }
     if (boardRect.isEmpty()) return nullptr;
 
     //创建边框动画
     QWidget* borderBox = new QWidget(this);
-    borderBox->setStyleSheet("border: 1px solid #ffffff; background-color: transparent;");
-    borderBox->setWindowFlags(Qt::Widget | Qt::FramelessWindowHint);
-    borderBox->setAttribute(Qt::WA_TransparentForMouseEvents);
+    borderBox->setStyleSheet("border: 1px solid #ffffff; background-color: transparent;");//设置边框样式为白色1像素线，背景透明
+    borderBox->setWindowFlags(Qt::Widget | Qt::FramelessWindowHint);//设置边框为无边框窗口，不占用窗口空间
+    borderBox->setAttribute(Qt::WA_TransparentForMouseEvents);//设置边框为透明，鼠标事件传递给子窗口
     
     //添加透明度效果
     auto borderEffect = std::make_unique<QGraphicsOpacityEffect>(borderBox);
-    borderEffect->setOpacity(0.0);
-    borderBox->setGraphicsEffect(borderEffect.get());
+    borderEffect->setOpacity(0.0);//设置边框透明度为0，初始时不可见
+    borderBox->setGraphicsEffect(borderEffect.get());//将边框透明度效果应用到边框窗口
     QGraphicsOpacityEffect* borderEffectPtr = borderEffect.release();
 
     //边框动画参数
     QRect startRect = boardRect;
-    borderBox->setGeometry(startRect);
-    borderBox->show();
+    borderBox->setGeometry(startRect);//设置边框窗口的几何形状为初始矩形
+    borderBox->show();//显示边框窗口
 
     //结束矩形（以棋盘中心向外扩展）
-    int expandSize = 250;
-    QPoint center = startRect.center();
-    QRect endRect = QRect(
+    int expandSize = 250;//边框扩展大小
+    QPoint center = startRect.center();//获取初始矩形的中心坐标
+    QRect endRect = QRect(//计算结束矩形的坐标
         center.x() - (startRect.width() + expandSize) / 2,
         center.y() - (startRect.height() + expandSize) / 2,
         startRect.width() + expandSize,
@@ -537,16 +696,16 @@ QSequentialAnimationGroup* BoardView::borderAnimation(){
     borderGroup->addAnimation(Tool::createOpacityAnimation(borderEffectPtr, 0.0, 0.5, 300, QEasingCurve::InQuad).release());
     
     //创建边框宽度动画
-    auto borderWidthAnim = std::make_unique<QPropertyAnimation>();
-    borderWidthAnim->setStartValue(10);
-    borderWidthAnim->setEndValue(60);
-    borderWidthAnim->setDuration(700);
-    borderWidthAnim->setEasingCurve(QEasingCurve::OutQuad);
+    auto borderWidthAnim = std::make_unique<QPropertyAnimation>(borderBox, "borderWidth");//创建边框宽度动画
+    borderWidthAnim->setStartValue(10);//设置初始边框宽度***px
+    borderWidthAnim->setEndValue(60);//设置结束边框宽度***px
+    borderWidthAnim->setDuration(700);//设置动画持续时间***ms
+    borderWidthAnim->setEasingCurve(QEasingCurve::OutQuad);//设置动画曲线为二次函数
     
     //连接边框宽度变化信号
     connect(borderWidthAnim.get(), &QPropertyAnimation::valueChanged, [borderBox](const QVariant& value){
         int width = value.toInt();
-        borderBox->setStyleSheet(
+        borderBox->setStyleSheet(//设置边框样式为白色width像素线，背景透明
             QString("border: %1px solid #ffffff; background-color: transparent;")
             .arg(width)
         );
@@ -557,10 +716,9 @@ QSequentialAnimationGroup* BoardView::borderAnimation(){
     
     //创建并行动画组（同时执行边框宽度和缩放动画）
     auto parallelAnim = std::make_unique<QParallelAnimationGroup>();
-    parallelAnim->addAnimation(borderWidthAnim.release());
-    parallelAnim->addAnimation(scaleAnim.release());
-    borderGroup->addAnimation(parallelAnim.release());
-    
+    parallelAnim->addAnimation(borderWidthAnim.release());//添加边框宽度动画
+    parallelAnim->addAnimation(scaleAnim.release());//添加缩放动画
+    borderGroup->addAnimation(parallelAnim.release());//添加并行动画组
     borderGroup->addAnimation(Tool::createOpacityAnimation(borderEffectPtr, 0.5, 0.0, 300, QEasingCurve::OutQuad).release());
 
     //动画结束后清理
@@ -568,16 +726,16 @@ QSequentialAnimationGroup* BoardView::borderAnimation(){
     
     return borderGroup.release();
 }
-
+//全屏闪光动画
 QSequentialAnimationGroup* BoardView::shineAnimation(){
 //创建全屏动画
     QWidget* overlay = Tool::createOverlay(this, rect(), "background-color: #ffffff;");
-    QGraphicsOpacityEffect* overlayEffect = static_cast<QGraphicsOpacityEffect*>(overlay->graphicsEffect());
+    QGraphicsOpacityEffect* overlayEffect = static_cast<QGraphicsOpacityEffect*>(overlay->graphicsEffect());//获取全屏窗口的透明度效果
     overlay->show();
 
     //创建全屏动画组
     auto overlayGroup = std::make_unique<QSequentialAnimationGroup>();
-    
+    //添加全屏动画
     overlayGroup->addAnimation(Tool::createOpacityAnimation(overlayEffect, 0.0, 0.9, 200, QEasingCurve::InQuad).release());
     overlayGroup->addAnimation(Tool::createOpacityAnimation(overlayEffect, 0.9, 0.0, 200, QEasingCurve::OutCubic).release());
 

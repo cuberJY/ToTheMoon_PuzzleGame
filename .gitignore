@@ -4,6 +4,9 @@ cmake-build-*/
 out/
 dist/
 
+#VS Code
+.vscode/
+
 # Qt Creator
 .qtcreator/
 

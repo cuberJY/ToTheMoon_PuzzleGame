@@ -1,4 +1,4 @@
-#include "BoardView.h"
+﻿#include "BoardView.h"
 #include "BoardController.h"
 #include "MainWindow.h"
 #include "Tool.h"
@@ -134,11 +134,7 @@ void BoardView::startGame(){
     //初始化倒计时
     if (controller->isCountdownEnabled()){
         remainingTime = boardConfig.limitTime;
-        ui->timeLabel->setText(
-            QString("%1:%2")
-            .arg(remainingTime / 60, 2, 10, '0')
-            .arg(remainingTime % 60, 2, 10, '0')
-        );
+        setTimeLabel();
         ui->timeLabel->setStyleSheet(Tool::timeTextStyle);
         ui->timeLabel->setVisible(true);
         countdownTimer->start(1000);
@@ -310,7 +306,8 @@ void BoardView::on_backBtn_clicked(){
 }
 //倒计时
 void BoardView::onCountdownTick(){
-    remainingTime--;
+    if (mainWindow->getIsAnimation()) remainingTime--;
+    else remainingTime -= 2;
     setTimeLabel();
 }
 
@@ -371,7 +368,6 @@ void BoardView::updateBoardDisplay(){
     //更新连胜统计显示
     if (boardConfig.limitStep >= 0 || boardConfig.limitTime >= 0){
         updateStreakDisplay();
-        updateRemStepLabel();
     }
 }
 
@@ -405,12 +401,20 @@ void BoardView::updateRemStepLabel(){
 //更新时间标签
 void BoardView::setTimeLabel(){
     if (!controller->isCountdownEnabled()) return;
-
-    ui->timeLabel->setText(
-        QString("%1:%2")
-        .arg(remainingTime / 60, 2, 10, '0')
-        .arg(remainingTime % 60, 2, 10, '0')
-    );
+    if (mainWindow->getIsAnimation()){
+        ui->timeLabel->setText(
+            QString("%1:%2")
+            .arg(remainingTime / 60, 2, 10, '0')
+            .arg(remainingTime % 60, 2, 10, '0')
+        );
+    }
+    else{
+        ui->timeLabel->setText(
+            QString("%1:%2")
+            .arg((remainingTime/2) / 60, 2, 10, '0')
+            .arg((remainingTime/2) % 60, 2, 10, '0')
+        );
+    }
 
     if (remainingTime <= 10){
         ui->timeLabel->setStyleSheet("color: rgba(255, 127, 0, 0.9); font-family:'Terminal'; font-size: 16px;");

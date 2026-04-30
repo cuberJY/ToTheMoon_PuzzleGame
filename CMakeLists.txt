@@ -1,6 +1,10 @@
 cmake_minimum_required(VERSION 3.16)
 
-project(ToTheMoonPuzzleGame VERSION 1.0.0 LANGUAGES CXX)
+project(ToTheMoonPuzzleGame VERSION 4.0.0 LANGUAGES CXX)
+
+set(PROJECT_COMPANY     "cuberJY")
+set(PROJECT_DESCRIPTION "To The Moon Puzzle Game")
+set(PROJECT_COPYRIGHT   "Copyright (C) 2026 cuberJY. All rights reserved.")
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -63,6 +67,14 @@ set(RESOURCE_FILES
     resources/resources.qrc
 )
 
+if(WIN32)
+    configure_file(
+        ${CMAKE_CURRENT_SOURCE_DIR}/resources/version.rc.in
+        ${CMAKE_CURRENT_BINARY_DIR}/version.rc
+    )
+    set(VERSION_RESOURCE ${CMAKE_CURRENT_BINARY_DIR}/version.rc)
+endif()
+
 # 创建可执行文件
 qt_add_executable(ToTheMoonPuzzleGame
     ${CORE_SOURCES}
@@ -71,6 +83,7 @@ qt_add_executable(ToTheMoonPuzzleGame
     ${GUI_HEADERS}
     ${UI_FILES}
     ${RESOURCE_FILES}
+    ${VERSION_RESOURCE}
 )
 
 if(WIN32)

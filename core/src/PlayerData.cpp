@@ -2,6 +2,8 @@
 
 PlayerData::PlayerData():
     currentStreak(0),
+    maxStreakEasy(0),
+    maxStreakNormal(0),
     maxStreakHard(0),
     maxStreakHardcore(0),
     maxLevel(0){
@@ -9,7 +11,17 @@ PlayerData::PlayerData():
 
 void PlayerData::updateStreak(Diff diff){
     currentStreak++;
-    if (diff == Diff::hard){
+    if (diff == Diff::easy){
+        if (currentStreak > maxStreakEasy){
+            maxStreakEasy = currentStreak;
+        }
+    }
+    else if (diff == Diff::normal){
+        if (currentStreak > maxStreakNormal){
+            maxStreakNormal = currentStreak;
+        }
+    }
+    else if (diff == Diff::hard){
         if (currentStreak > maxStreakHard){
             maxStreakHard = currentStreak;
         }
@@ -27,6 +39,14 @@ void PlayerData::resetStreak(){
 
 int PlayerData::getCurrentStreak() const{
     return currentStreak;
+}
+
+int PlayerData::getMaxStreakEasy() const{
+    return maxStreakEasy;
+}
+
+int PlayerData::getMaxStreakNormal() const{
+    return maxStreakNormal;
 }
 
 int PlayerData::getMaxStreakHard() const{

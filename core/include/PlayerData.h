@@ -10,6 +10,8 @@ public:
     void resetStreak();
 
     int getCurrentStreak() const;
+    int getMaxStreakEasy() const;
+    int getMaxStreakNormal() const;
     int getMaxStreakHard() const;
     int getMaxStreakHardcore() const;
 
@@ -20,6 +22,8 @@ public:
 
 private:
     int currentStreak;
+    int maxStreakEasy;
+    int maxStreakNormal;
     int maxStreakHard;
     int maxStreakHardcore;
 

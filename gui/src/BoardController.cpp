@@ -145,7 +145,13 @@ int BoardController::getCurrentStreak() const{
 }
 //获取最大连胜次数
 int BoardController::getMaxStreak(Diff diff) const{
-    if (diff == Diff::hard){
+    if (diff == Diff::easy){
+        return playerData->getMaxStreakEasy();
+    }
+    else if (diff == Diff::normal){
+        return playerData->getMaxStreakNormal();
+    }
+    else if (diff == Diff::hard){
         return playerData->getMaxStreakHard();
     }
     else if (diff == Diff::hardcore){

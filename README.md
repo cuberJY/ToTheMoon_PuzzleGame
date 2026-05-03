@@ -12,6 +12,9 @@
 
 - 🎮 **两种游戏模式**：关卡模式（15 关）与随机模式（4 种难度）
 - 🔢 **最优解求解**：基于 GF(2) 域高斯-约旦消元 + 位掩码枚举，求出最少步数解
+- ⌨️ **键盘操作**：自定义焦点环（Tab 键遍历按钮），支持纯键盘游玩
+- 💾 **本地存档**：连胜记录与关卡进度以 JSON 格式自动持久化，退出时保存、启动时恢复
+- 🔄 **数据重置**：设置菜单提供一键重置，清空所有本地存档
 - 🎨 **翻转动画**：带有淡入淡出和卡片翻转效果的逐格动画
 - 🎵 **背景音乐与音效**：内置 *For River* 钢琴曲及操作音效，支持独立开关
 - ⚙️ **丰富设置**：BGM/音效/动画特效可随时开关，关卡线性解锁
@@ -42,6 +45,7 @@
 | 语言 | C++17 |
 | GUI 框架 | Qt6 (Core / Gui / Widgets / Multimedia) |
 | 构建系统 | CMake 3.16+ |
+| 数据持久化 | JSON 读写，文件保存在可执行文件同级目录 |
 | 架构模式 | MVC（core 层与 GUI 层分离） |
 
 ## 项目结构
@@ -138,6 +142,27 @@ cmake --build . --config Release
 | `QtMultimedia` 找不到 | 确认安装 Qt 时勾选了 Multimedia 模块，Linux 需额外安装 `qt6-multimedia-dev` |
 | 运行时提示缺少 DLL | Windows 下将 Qt 的 `bin` 目录加入环境变量，或使用 `windeployqt` 工具自动复制依赖 |
 | 编译 C++17 报错 | 确保编译器支持 C++17（MSVC 2019+、GCC 8+、Clang 7+） |
+
+## 存档说明
+
+游戏数据自动保存在可执行文件所在目录下的 `playerData.json` 中，结构如下：
+
+```json
+{
+    "currentStreak": 0,
+    "maxStreakEasy": 3,
+    "maxStreakNormal": 2,
+    "maxStreakHard": 5,
+    "maxStreakHardcore": 1,
+    "maxLevel": 7
+}
+```
+
+- **currentStreak**：当前连胜次数（失败或查看答案后重置）
+- **maxStreakXxx**：各难度下的历史最高连胜
+- **maxLevel**：已解锁的最高关卡编号（从 0 开始）
+
+数据在游戏退出时自动保存，启动时自动加载。如需清空所有记录，可在设置菜单中点击「重置」。
 
 ## License
 

@@ -13,7 +13,7 @@ ChooseDiff::ChooseDiff(MainWindow *parent)
     ui->setupUi(this);
 
     //设置背景图片
-    QString bgPath = Tool::getImgPath("background/backgroundRandom.png");
+    QString bgPath = Tool::getImgPath("background/backgroundHome.png");
     Tool::setBackground(this, bgPath);
     //设置按钮样式
     ui->easyButton->setStyleSheet(Tool::chooseButtonStyle);
@@ -28,6 +28,10 @@ ChooseDiff::ChooseDiff(MainWindow *parent)
     connect(ui->normalButton, &QPushButton::clicked, this, [this]() {onDiffButtonClicked(Diff::normal);});
     connect(ui->hardButton, &QPushButton::clicked, this, [this]() {onDiffButtonClicked(Diff::hard);});
     connect(ui->hardcoreButton, &QPushButton::clicked, this, [this]() {onDiffButtonClicked(Diff::hardcore);});
+
+    setTabOrder(ui->easyButton, ui->normalButton);
+    setTabOrder(ui->normalButton, ui->hardButton);
+    setTabOrder(ui->hardButton, ui->hardcoreButton);
 }
 
 ChooseDiff::~ChooseDiff()

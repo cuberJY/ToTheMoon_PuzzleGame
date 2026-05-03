@@ -123,6 +123,10 @@ bool BoardController::isTimedOut() const{
 int BoardController::getRemStep() const{
     return puzzleBoard->getLimitStep() - puzzleBoard->getPlayerStep();
 }
+//重置游戏数据
+void BoardController::resetData() const{
+    playerData->resetData();
+}
 
 //====================随机模式====================
 //设置游戏难度

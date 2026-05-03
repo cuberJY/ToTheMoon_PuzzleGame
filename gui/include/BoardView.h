@@ -32,6 +32,7 @@ public:
     void setDiff(Diff diff);
     void setLevel(int level);
     void startGame();
+    void updateStreakDisplay();
 
 signals:
     //返回菜单信号
@@ -60,7 +61,7 @@ private:
     //更新棋盘显示
     void updateBoardDisplay();
     void updateStepDisplay();
-    void updateStreakDisplay();
+    //void updateStreakDisplay();在public中定义
     void updateRemStepLabel();
     void setTimeLabel();
     //设置操作按钮的启用状态

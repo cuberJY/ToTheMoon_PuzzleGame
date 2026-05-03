@@ -193,6 +193,20 @@ void MainWindow::on_animationBtn_clicked(){
     }
     isAnimation = !isAnimation;
 }
+//重置按钮点击槽函数
+void MainWindow::on_resetBtn_clicked(){
+    if (isAnimation){
+        Tool::clickedAnimation(resetBtn, isAnimation, Tool::settingsClickedButtonStyle);
+    }
+    controller->resetData();
+    if (!boardWidget) return;
+    if (boardWidget->getCurrentMode() == ModeType::Level){
+        chooseLevelWidget->refresh();
+    }
+    else if (boardWidget->getCurrentMode() == ModeType::Random){
+        boardWidget->updateStreakDisplay();
+    }
+}
 //初始化设置按钮
 void MainWindow::initialSettingsButtons(){
     //设置按钮
@@ -230,6 +244,13 @@ void MainWindow::initialSettingsButtons(){
     animationBtn->setStyleSheet(Tool::settingsOnButtonStyle);
     animationBtn->setVisible(false);
     connect(animationBtn, &QPushButton::clicked, this, &MainWindow::on_animationBtn_clicked);
+    //重置按钮
+    resetBtn = new QPushButton(this);
+    resetBtn->setGeometry(750, 186, 40, 40);
+    resetBtn->setText("重置");
+    resetBtn->setStyleSheet(Tool::settingsOnButtonStyle);
+    resetBtn->setVisible(false);
+    connect(resetBtn, &QPushButton::clicked, this, &MainWindow::on_resetBtn_clicked);
 }
 //显示设置菜单
 void MainWindow::showSettingsMenu(){
@@ -242,6 +263,7 @@ void MainWindow::showSettingsMenu(){
         bgmBtn->setVisible(true);
         effectBtn->setVisible(true);
         animationBtn->setVisible(true);
+        resetBtn->setVisible(true);
     });
     //设置遮罩排除区域
     QRegion excludedRegion;
@@ -249,10 +271,12 @@ void MainWindow::showSettingsMenu(){
     QRect bgmBtnRect = QRect(bgmBtn->mapTo(this, QPoint(0, 0)), bgmBtn->size()).adjusted(2, 2, -2, -2);//BGM按钮区域
     QRect effectBtnRect = QRect(effectBtn->mapTo(this, QPoint(0, 0)), effectBtn->size()).adjusted(2, 2, -2, -2);//音效按钮区域
     QRect animationBtnRect = QRect(animationBtn->mapTo(this, QPoint(0, 0)), animationBtn->size()).adjusted(2, 2, -2, -2);//特效按钮区域
+    QRect resetBtnRect = QRect(resetBtn->mapTo(this, QPoint(0, 0)), resetBtn->size()).adjusted(2, 2, -2, -2);//重置按钮区域
     excludedRegion += settingsBtnRect;
     excludedRegion += bgmBtnRect;
     excludedRegion += effectBtnRect;
     excludedRegion += animationBtnRect;
+    excludedRegion += resetBtnRect;
     //创建遮罩层
     if (!settingsOverlay){
         QTimer::singleShot(delayTime-20, this, [=](){
@@ -278,6 +302,7 @@ void MainWindow::hideSettingsMenu(){
         bgmBtn->setVisible(false);
         effectBtn->setVisible(false);
         animationBtn->setVisible(false);
+        resetBtn->setVisible(false);
     });
     //隐藏遮罩层
     if (settingsOverlay){

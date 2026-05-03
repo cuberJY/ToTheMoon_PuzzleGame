@@ -33,6 +33,8 @@ public:
     const std::vector<std::vector<bool>>& getBoard() const;
     BoardConfig getBoardConfig() const;
     QString getBestSolveString() const;
+    //重置游戏数据
+    void resetData() const;
 
     //倒计时
     bool isCountdownEnabled() const;

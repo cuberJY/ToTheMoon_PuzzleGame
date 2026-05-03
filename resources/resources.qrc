@@ -2,7 +2,7 @@
     <qresource prefix="/">
         <!-- Background images -->
         <file>images/background/backgroundBoard.png</file>
-        <file>images/background/backgroundRandom.png</file>
+        <file>images/background/backgroundHome.png</file>
         
         <!-- Board images -->
         <file>images/board/cellOn.png</file>

@@ -11,7 +11,7 @@ Home::Home(MainWindow *parent)
 {
     ui->setupUi(this);
 
-    QString bgPath = Tool::getImgPath("background/backgroundRandom.png");
+    QString bgPath = Tool::getImgPath("background/backgroundHome.png");
     Tool::setBackground(this, bgPath);
 
     ui->levelButton->setStyleSheet(Tool::chooseButtonStyle);

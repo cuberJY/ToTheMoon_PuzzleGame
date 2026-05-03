@@ -67,6 +67,26 @@ BoardView::BoardView(MainWindow *parent):
     ui->backBtn->setStyleSheet(Tool::menuButtonStyle);
     ui->functionBtn1->setStyleSheet(Tool::menuButtonStyle);
     ui->functionBtn2->setStyleSheet(Tool::menuButtonStyle);
+
+    //禁用所有格子按钮的键盘焦点
+    for (auto& row : cellButtons){
+        for (QPushButton* cell : row){
+            cell->setFocusPolicy(Qt::NoFocus);
+        }
+    }
+    //设置自定义焦点链顺序: sdBtn → rowBtns → mdBtn → colBtns → functionBtns
+    setTabOrder(ui->sdBtn, rowBtns[0]);
+    for (int i=5; i>0; i--){
+        setTabOrder(rowBtns[i], rowBtns[i-1]);
+    }
+    setTabOrder(rowBtns[0], ui->mdBtn);
+    setTabOrder(ui->mdBtn, colBtns[0]);
+    for (int i=0; i<5; i++){
+        setTabOrder(colBtns[i], colBtns[i+1]);
+    }
+    setTabOrder(colBtns[5], ui->functionBtn1);
+    setTabOrder(ui->functionBtn1, ui->functionBtn2);
+    setTabOrder(ui->functionBtn2, ui->backBtn);
 }
 
 //析构函数，释放资源
@@ -440,7 +460,7 @@ void BoardView::checkGameState(){
         ui->messageLabel->setStyleSheet("color: rgba(30, 255, 30, 0.7); font-size: 20px;");
         setButtonsEnabled(false, true);
         if (mainWindow->getIsEffectPlaying()) Tool::playAudio(Tool::getAudioPath("effect/finish.mp3"), Tool::effect, false);
-        if (mainWindow->getIsAnimation()) startFinishAnimation();
+        if (mainWindow->getIsAnimation() && remainingTime != 0) startFinishAnimation();
     }
     //检查是否失败
     else if (controller->isGameFailed()){
@@ -461,7 +481,7 @@ void BoardView::checkGameState(){
     }
 }
 
-//设置操作按钮的启用状态
+//设置操作按钮的启用状态（是否启用，是否在视觉上变灰）
 void BoardView::setButtonsEnabled(bool enabled, bool setVisual){
     QPushButton* rowBtns[] = {ui->rowBtn0, ui->rowBtn1, ui->rowBtn2, ui->rowBtn3, ui->rowBtn4, ui->rowBtn5};
     QPushButton* colBtns[] = {ui->colBtn0, ui->colBtn1, ui->colBtn2, ui->colBtn3, ui->colBtn4, ui->colBtn5};
@@ -474,6 +494,8 @@ void BoardView::setButtonsEnabled(bool enabled, bool setVisual){
         else{
             rowBtns[i]->setAttribute(Qt::WA_TransparentForMouseEvents, !enabled);
             colBtns[i]->setAttribute(Qt::WA_TransparentForMouseEvents, !enabled);
+            rowBtns[i]->blockSignals(!enabled);
+            colBtns[i]->blockSignals(!enabled);
         }
     }
     //启用/禁用对角线按钮
@@ -484,7 +506,10 @@ void BoardView::setButtonsEnabled(bool enabled, bool setVisual){
     else{
         ui->mdBtn->setAttribute(Qt::WA_TransparentForMouseEvents, !enabled);
         ui->sdBtn->setAttribute(Qt::WA_TransparentForMouseEvents, !enabled);
+        ui->mdBtn->blockSignals(!enabled);
+        ui->sdBtn->blockSignals(!enabled);
     }
+
     //启用/禁用功能按钮
     ui->functionBtn1->setEnabled(true);
     ui->functionBtn2->setEnabled(true);

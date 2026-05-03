@@ -216,7 +216,7 @@ void PuzzleBoard::bestSolve(){
                 }
             }
         }
-         for (int i=0; i<pRow; i++){
+        for (int i=0; i<pRow; i++){
             if (mat[i][pCol] == 1){
                 for (int j=0; j<mCol; j++){
                     mat[i][j] = mat[i][j] ^ mat[pRow][j];

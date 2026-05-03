@@ -1,10 +1,14 @@
 ﻿#pragma once
 
 #include "GameMode.h"
+#include <string>
 
 class PlayerData{
 public:
     PlayerData();
+    ~PlayerData();
+
+    void resetData();
     //设置连胜次数
     void updateStreak(Diff diff);
     void resetStreak();
@@ -19,6 +23,9 @@ public:
     void setMaxLevel(int level);
 
     int getMaxLevel() const;
+
+    void saveToFile(const std::string& filepath) const;
+    void loadFromFile(const std::string& filepath);
 
 private:
     int currentStreak;

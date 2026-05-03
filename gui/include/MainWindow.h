@@ -1,4 +1,4 @@
-#ifndef MAINWINDOW_H
+﻿#ifndef MAINWINDOW_H
 #define MAINWINDOW_H
 
 #include "BoardController.h"
@@ -47,6 +47,7 @@ private slots:
     void on_bgmBtn_clicked();
     void on_effectBtn_clicked();
     void on_animationBtn_clicked();
+    void on_resetBtn_clicked();
 
 private:
     //设置菜单相关函数
@@ -71,6 +72,7 @@ private:
     QPushButton *bgmBtn;
     QPushButton *effectBtn;
     QPushButton *animationBtn;
+    QPushButton *resetBtn;
     QWidget *settingsOverlay;
 };
 

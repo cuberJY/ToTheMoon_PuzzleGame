@@ -11,7 +11,7 @@ ChooseLevel::ChooseLevel(MainWindow *parent)
 {
     ui->setupUi(this);
 
-    QString bgPath = Tool::getImgPath("background/backgroundRandom.png");
+    QString bgPath = Tool::getImgPath("background/backgroundHome.png");
     Tool::setBackground(this, bgPath);
 
     QPushButton* levelBtns[] = {
@@ -23,6 +23,10 @@ ChooseLevel::ChooseLevel(MainWindow *parent)
     for (int i=0; i<15; i++){
         levelBtns[i]->setStyleSheet(Tool::chooseButtonStyle);
         connect(levelBtns[i], &QPushButton::clicked, this, [this, i]() {onLevelButtonClicked(i);});
+    }
+
+    for (int i=0; i<15; i++){
+        setTabOrder(levelBtns[i], levelBtns[i+1]);
     }
 }
 

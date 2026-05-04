@@ -83,7 +83,7 @@ void PuzzleBoard::turnSD(){//翻转副对角线
 
 //系统模拟玩家打乱
 void PuzzleBoard::randomBoard(){
-    //随机数：随机设备+梅森旋转引擎+均匀分布(DeepSeek V3)
+    //随机数：随机设备+梅森旋转引擎+均匀分布
     random_device rd;
     mt19937 gen(rd());
     uniform_int_distribution<> dis(1, row+col+20);

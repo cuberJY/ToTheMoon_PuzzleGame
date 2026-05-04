@@ -181,7 +181,7 @@ void BoardView::startGame(){
     //根据难度显示/隐藏对角线按钮
     ui->sdBtn->setVisible(boardConfig.isSD);
     //显示连胜统计标签
-    ui->streakLabel->setVisible(boardConfig.limitStep >= 0 || boardConfig.limitTime >= 0);
+    ui->streakLabel->setVisible(getCurrentMode() == ModeType::Random && (boardConfig.limitStep >= 0 || boardConfig.limitTime >= 0));
     //清空消息标签
     ui->messageLabel->clear();
 

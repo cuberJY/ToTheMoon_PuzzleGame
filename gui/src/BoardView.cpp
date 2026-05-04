@@ -308,7 +308,7 @@ void BoardView::on_functionBtn2_clicked(){
             startGame();
         }
         else if (getCurrentMode() == ModeType::Level){
-            if (controller->isGameFinished() || controller->getCurrentLevel() < controller->getPlayerMaxLevel()){
+            if (controller->isGameFinished() && controller->getCurrentLevel() < controller->getPlayerMaxLevel()){
                 controller->nextLevel();
                 startGame();
             }

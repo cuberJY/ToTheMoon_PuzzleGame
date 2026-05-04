@@ -175,10 +175,10 @@ int BoardController::getCurrentLevel() const{
 }
 //下一关
 void BoardController::nextLevel(){
-    int next = gameMode->getCurrentLevel() + 1;
-    if (next >= gameMode->getTotalLevel()){
+    if (gameMode->getCurrentLevel() >= gameMode->getTotalLevel()){
         return;
     }
+    int next = gameMode->getCurrentLevel() + 1;
     gameMode->setLevel(next);
     startGame();
 }

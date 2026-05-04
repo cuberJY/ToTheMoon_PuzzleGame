@@ -18,7 +18,7 @@ namespace Ui{
 class BoardView;
 }
 class MainWindow;
-//游戏棋盘界面类，管理棋盘显示和玩家操作
+//游戏拼图界面类，管理拼图显示和玩家操作
 class BoardView : public QWidget{
     Q_OBJECT
 
@@ -58,7 +58,7 @@ private slots:
 private:
     //图片预加载和设置函数
     void preloadPiecePixmaps();
-    //更新棋盘显示
+    //更新拼图显示
     void updateBoardDisplay();
     void updateStepDisplay();
     //void updateStreakDisplay();在public中定义
@@ -82,8 +82,8 @@ private:
     BoardController* controller;
     MainWindow* mainWindow;
     
-    std::vector<std::vector<QPushButton*>> cellButtons;//棋盘格子按钮数组
-    std::vector<std::vector<bool>> previousBoard;//保存上一状态的棋盘状态
+    std::vector<std::vector<QPushButton*>> cellButtons;//拼图格子按钮数组
+    std::vector<std::vector<bool>> previousBoard;//保存上一状态的拼图状态
     std::vector<std::pair<int, int>> cellsToAnimate;//存储待动画的格子坐标
 
     QTimer *animationTimer;//控制动画时序的定时器

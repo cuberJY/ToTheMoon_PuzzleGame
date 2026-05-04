@@ -1,4 +1,4 @@
-﻿#include "MainWindow.h"
+#include "MainWindow.h"
 #include "Tool.h"
 #include <QTimer>
 #include <memory>
@@ -17,7 +17,7 @@ MainWindow::MainWindow(QWidget *parent)
     stackedWidget = new QStackedWidget(this);
     setCentralWidget(stackedWidget);
 
-    //创建难度选择界面和游戏棋盘界面
+    //创建难度选择界面和游戏拼图界面
     homeWidget = new Home(this);
     chooseLevelWidget = new ChooseLevel(this);
     chooseDiffWidget = new ChooseDiff(this);
@@ -101,7 +101,7 @@ void MainWindow::onLevelModeSelected(){
     chooseLevelWidget->refresh();
     stackedWidget->setCurrentWidget(chooseLevelWidget);
 }
-//难度选择槽函数：切换到游戏棋盘界面
+//难度选择槽函数：切换到游戏拼图界面
 void MainWindow::onDifficultySelected(Diff diff){
     hideSettingsMenu();
     settingsMenuExpanded = false;
@@ -110,10 +110,10 @@ void MainWindow::onDifficultySelected(Diff diff){
     boardWidget->setGameMode(randomMode);
     boardWidget->setDiff(diff);
     boardWidget->startGame();
-    stackedWidget->setCurrentWidget(boardWidget);//切换到棋盘界面
+    stackedWidget->setCurrentWidget(boardWidget);//切换到拼图界面
     Tool::setAudioVolume(Tool::bgm, 30);
 }
-//关卡选择槽函数：切换到游戏棋盘界面
+//关卡选择槽函数：切换到游戏拼图界面
 void MainWindow::onLevelSelected(int level){
     hideSettingsMenu();
     settingsMenuExpanded = false;

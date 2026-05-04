@@ -1,4 +1,4 @@
-﻿#ifndef MAINWINDOW_H
+#ifndef MAINWINDOW_H
 #define MAINWINDOW_H
 
 #include "BoardController.h"
@@ -13,7 +13,7 @@
 #include <QPropertyAnimation>
 #include <QGraphicsOpacityEffect>
 
-//管理难度选择和游戏棋盘界面的切换
+//管理难度选择和游戏拼图界面的切换
 class MainWindow : public QMainWindow
 {
     Q_OBJECT

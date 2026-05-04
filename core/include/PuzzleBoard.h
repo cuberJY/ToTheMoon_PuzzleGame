@@ -42,7 +42,7 @@ private:
     int limitStep;//最大步数限制
     int limitTime;//最大时间限制
     int opCount;
-    std::vector<std::vector<bool>> board;//m行n列的棋盘
+    std::vector<std::vector<bool>> board;//m行n列的拼图
 
     void bestSolve();
     int minStep;

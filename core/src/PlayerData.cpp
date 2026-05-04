@@ -2,8 +2,8 @@
 #include <fstream>//文件读写
 #include <sstream>//字符串流
 
-namespace {
-    int readJsonInt(const std::string& text, const std::string& key) {
+namespace{
+    int readJsonInt(const std::string& text, const std::string& key){
         std::string search = "\"" + key + "\"";
         size_t pos = text.find(search);
         if (pos == std::string::npos) return 0;

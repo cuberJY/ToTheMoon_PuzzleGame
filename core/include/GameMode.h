@@ -1,8 +1,8 @@
-﻿#pragma once
+#pragma once
 #include "PuzzleBoard.h"
 #include <string>
 
-struct BoardConfig{//棋盘配置
+struct BoardConfig{//拼图配置
     int rows;
     int cols;
     bool isMD;

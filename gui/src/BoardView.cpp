@@ -1,4 +1,4 @@
-﻿#include "BoardView.h"
+#include "BoardView.h"
 #include "BoardController.h"
 #include "MainWindow.h"
 #include "Tool.h"
@@ -7,7 +7,7 @@
 #include "LevelMode.h"
 #include <memory>
 
-//构造函数，初始化棋盘界面
+//构造函数，初始化拼图界面
 BoardView::BoardView(MainWindow *parent):
     QWidget(parent),
     ui(new Ui::BoardView()),
@@ -30,7 +30,7 @@ BoardView::BoardView(MainWindow *parent):
     //预加载拼图块图片
     preloadPiecePixmaps();
 
-    //初始化棋盘格子按钮数组
+    //初始化拼图格子按钮数组
     cellButtons = {
         {ui->cell00, ui->cell01, ui->cell02, ui->cell03, ui->cell04, ui->cell05},
         {ui->cell10, ui->cell11, ui->cell12, ui->cell13, ui->cell14, ui->cell15},
@@ -114,7 +114,7 @@ void BoardView::setLevel(int level){
     controller->setLevel(level);
 }
 
-//开始游戏，初始化棋盘
+//开始游戏，初始化拼图
 void BoardView::startGame(){
     controller->startGame();
 
@@ -176,7 +176,7 @@ void BoardView::startGame(){
 
     //启用所有操作按钮
     setButtonsEnabled(true, true);
-    //显示所有行、列按钮和棋盘格子
+    //显示所有行、列按钮和拼图格子
     QPushButton* rowBtns[] = {ui->rowBtn0, ui->rowBtn1, ui->rowBtn2, ui->rowBtn3, ui->rowBtn4, ui->rowBtn5};
     QPushButton* colBtns[] = {ui->colBtn0, ui->colBtn1, ui->colBtn2, ui->colBtn3, ui->colBtn4, ui->colBtn5};
     for (int i=0; i<6; i++){
@@ -214,7 +214,7 @@ void BoardView::startGame(){
         ui->backBtn->setText("切换关卡");
     }
 
-    //更新棋盘显示
+    //更新拼图显示
     updateBoardDisplay();
 }
 
@@ -353,9 +353,9 @@ void BoardView::preloadPiecePixmaps(){
     }
 }
 
-//更新棋盘显示
+//更新拼图显示
 void BoardView::updateBoardDisplay(){
-    //获取当前棋盘状态
+    //获取当前拼图状态
     std::vector<std::vector<bool>> board = controller->getBoard();
     BoardConfig boardConfig = controller->getBoardConfig();
     int row = boardConfig.rows;
@@ -376,7 +376,7 @@ void BoardView::updateBoardDisplay(){
                 }
             }
             else{
-                //超出棋盘范围的格子显示默认正面
+                //超出拼图范围的格子显示默认正面
                 Tool::setPuzzleBoardImage(cellButtons[i][j], cellOnPiecePixmaps[i][j]);
             }
         }
@@ -533,7 +533,7 @@ void BoardView::startTurnAnimation(){
         cellsToAnimate.clear();//清空待翻转的格子列表
         currentAnimationIndex = 0;//重置动画索引
 
-        //获取当前棋盘状态
+        //获取当前拼图状态
         std::vector<std::vector<bool>> currentBoard = controller->getBoard();
         int rows = controller->getBoardConfig().rows;
         int cols = controller->getBoardConfig().cols;
@@ -566,7 +566,7 @@ void BoardView::startTurnAnimation(){
 void BoardView::updateSingleCell(int i, int j){
     std::vector<std::vector<bool>> board = controller->getBoard();
     
-    if (i < static_cast<int>(board.size()) && j < static_cast<int>(board[i].size())){//判断坐标是否在棋盘范围内
+    if (i < static_cast<int>(board.size()) && j < static_cast<int>(board[i].size())){//判断坐标是否在拼图范围内
         if (board[i][j]){
             //使用缓存的cellOn拼图块
             Tool::setPuzzleBoardImage(cellButtons[i][j], cellOnPiecePixmaps[i][j]);
@@ -672,17 +672,17 @@ void BoardView::startFinishAnimation(){
 }
 //边框动画
 QSequentialAnimationGroup* BoardView::borderAnimation(){
-    //计算棋盘的边界
+    //计算拼图的边界
     QRect boardRect;
     auto calculateButtonBounds = [&boardRect, this](QPushButton* btn){
         if (btn){
             QPoint topLeft = btn->mapTo(this, QPoint(0,0));//将按钮的左上角映射到父窗口坐标系
             QRect btnRect(topLeft, btn->size());//创建按钮的矩形区域
             if (boardRect.isEmpty()){
-                boardRect = btnRect;//如果棋盘矩形为空，直接赋值为按钮矩形
+                boardRect = btnRect;//如果拼图矩形为空，直接赋值为按钮矩形
             }
             else{
-                boardRect = boardRect.united(btnRect);//否则，合并棋盘矩形和按钮矩形
+                boardRect = boardRect.united(btnRect);//否则，合并拼图矩形和按钮矩形
             }
         }
     };
@@ -710,7 +710,7 @@ QSequentialAnimationGroup* BoardView::borderAnimation(){
     borderBox->setGeometry(startRect);//设置边框窗口的几何形状为初始矩形
     borderBox->show();//显示边框窗口
 
-    //结束矩形（以棋盘中心向外扩展）
+    //结束矩形（以拼图中心向外扩展）
     int expandSize = 250;//边框扩展大小
     QPoint center = startRect.center();//获取初始矩形的中心坐标
     QRect endRect = QRect(//计算结束矩形的坐标

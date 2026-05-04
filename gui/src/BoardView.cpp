@@ -5,6 +5,7 @@
 #include "ui_BoardView.h"
 #include "RandomMode.h"
 #include "LevelMode.h"
+#include <random>
 #include <memory>
 
 //构造函数，初始化拼图界面
@@ -122,7 +123,17 @@ void BoardView::startGame(){
 
     //预加载和缓存图片
     if (controller->getCurrentMode() == ModeType::Random){
-        cellOnPixmap.load(Tool::getImgPath("board/cellOn.png"));
+        std::random_device rd;
+        std::mt19937 gen(rd());
+        std::uniform_int_distribution<> dis(1, 16);
+        int n = dis(gen);
+
+        if (n==16){
+            cellOnPixmap.load(Tool::getImgPath("board/cellOn.png"));
+        }
+        else{
+            cellOnPixmap.load(Tool::getImgPath(QString("board/level%1.png").arg(n, 2, 10, '0')));
+        }
     }
     else if (controller->getCurrentMode() == ModeType::Level){
         cellOnPixmap.load(Tool::getImgPath(

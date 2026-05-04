@@ -308,14 +308,14 @@ void BoardView::on_functionBtn2_clicked(){
             startGame();
         }
         else if (getCurrentMode() == ModeType::Level){
-            if (controller->isGameFinished() && controller->getCurrentLevel() < controller->getPlayerMaxLevel()){
-                controller->nextLevel();
-                startGame();
-            }
-            else if (controller->isGameFailed()){
+            if (controller->isGameFailed()){
                 controller->restartGame();
                 startGame();
             }
+            else if (controller->isGameFinished() || controller->getCurrentLevel() < controller->getPlayerMaxLevel()){
+                controller->nextLevel();
+                startGame();
+            } 
             else{
                 ui->messageLabel->setText("当前关卡未完成");
                 ui->messageLabel->setStyleSheet(Tool::messageTextStyle);

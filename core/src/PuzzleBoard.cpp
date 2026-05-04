@@ -86,7 +86,7 @@ void PuzzleBoard::randomBoard(){
     //随机数：随机设备+梅森旋转引擎+均匀分布(DeepSeek V3)
     random_device rd;
     mt19937 gen(rd());
-    uniform_int_distribution<> dis(1, opCount+18);
+    uniform_int_distribution<> dis(1, row+col+20);
 
     for (int i=0; i<30; i++){
         int n = dis(gen);
@@ -95,9 +95,9 @@ void PuzzleBoard::randomBoard(){
             turnRow(n-1);
         if (n>row && n<=row+col)
             turnCol(n-row-1);
-        if (n>row+col && n<=row+col+8)
+        if (n>row+col && n<=row+col+10)
             if (isMD) turnMD();
-        if (n>row+col+8)
+        if (n>row+col+10)
             if (isSD) turnSD();
     }
     

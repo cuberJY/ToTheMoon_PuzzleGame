@@ -707,6 +707,7 @@ QSequentialAnimationGroup* BoardView::borderAnimation(){
     //创建边框动画
     QWidget* borderBox = new QWidget(this);
     borderBox->setStyleSheet("border: 1px solid #ffffff; background-color: transparent;");//设置边框样式为白色1像素线，背景透明
+    borderBox->setWindowFlags(Qt::Widget | Qt::FramelessWindowHint);//设置边框为无边框窗口，不占用窗口空间
     borderBox->setAttribute(Qt::WA_TransparentForMouseEvents);//设置边框为透明，鼠标事件传递给子窗口
     
     //添加透明度效果

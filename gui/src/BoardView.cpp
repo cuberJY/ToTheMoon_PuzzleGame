@@ -471,7 +471,7 @@ void BoardView::checkGameState(){
         ui->messageLabel->setStyleSheet("color: rgba(30, 255, 30, 0.7); font-size: 20px;");
         setButtonsEnabled(false, true);
         if (mainWindow->getIsEffectPlaying()) Tool::playAudio(Tool::getAudioPath("effect/finish.mp3"), Tool::effect, false);
-        if (mainWindow->getIsAnimation() && remainingTime != 0) startFinishAnimation();
+        if (mainWindow->getIsAnimation() && (!controller->isCountdownEnabled() || remainingTime > 0)) startFinishAnimation();
     }
     //检查是否失败
     else if (controller->isGameFailed()){
